@@ -462,7 +462,7 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
 <div id="pg-setup" class="page show">
   <div class="logo-box">
     <div class="logo-ring"><i class="fa-solid fa-mosque"></i></div>
-    <h1>Huzura Doğru</h1>
+    <h1>Cemaatim</h1>
     <p>Namaz Vakitleri</p>
     <div class="acamay-badge"><i class="fa-solid fa-star"></i><span>ACAMAY</span></div>
   </div>
@@ -568,6 +568,9 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
             <p>Altın ibre Kıble'yi gösterir.<br>Kırmızı ibre Kuzeyi gösterir.</p>
             <div class="kb-deg" id="kb-deg">Konum bekleniyor</div>
             <div class="kb-status" id="kb-status"></div>
+            <button id="kb-perm-btn" style="display:none;margin-top:10px;background:rgba(61,220,132,.12);border:1.5px solid rgba(61,220,132,.3);border-radius:11px;color:var(--green);font-family:Cairo,sans-serif;font-size:12px;font-weight:800;padding:9px 18px;cursor:pointer">
+              <i class="fa-solid fa-compass"></i> Pusula İznini Ver (iOS)
+            </button>
           </div>
           <button class="loc-btn" style="margin-top:12px;max-width:240px" onclick="getLocation()">
             <i class="fa-solid fa-location-crosshairs"></i> Konumu Güncelle
@@ -898,7 +901,7 @@ const MOT={
 // ═══════════════════════════════════════════
 let S={name:'',city:'',lat:null,lon:null,times:{},done:{},
   alarms:{sabah:true,ogle:true,ikindi:true,aksam:true,yatsi:true},
-  cfg:{alarm:true,imsak:true,early:10,sound:'ezan1',method:'diyanet',theme:'dark'},
+  cfg:{alarm:true,imsak:true,early:10,sound:'hicaz',method:'diyanet',theme:'dark'},
   groups:[],sozler:[],curGroup:null};
 let alarmLoop=null,schedIds=[],selEmoVal='🕌',orientFn=null,heading=0,qibla=0;
 
@@ -1119,21 +1122,79 @@ function drawTicks(){
 function initKible(){
   drawTicks();
   if(S.lat){qibla=calcQibla(S.lat,S.lon);document.getElementById('kb-deg').textContent=Math.round(qibla)+'° Kuzeyden Doğuya';updateNeedles();}
-  if(window.DeviceOrientationEvent){
-    if(typeof DeviceOrientationEvent.requestPermission==='function'){
-      DeviceOrientationEvent.requestPermission().then(p=>{if(p==='granted')startOrient();}).catch(()=>{});
-    }else startOrient();
+  requestCompass();
+}
+
+function requestCompass(){
+  if(!window.DeviceOrientationEvent){
+    document.getElementById('kb-status').textContent='Pusula desteklenmiyor ✗';return;
+  }
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){
+    // iOS 13+ — izin butonu göster
+    const sb=document.getElementById('kb-perm-btn');
+    if(sb){sb.style.display='';sb.onclick=()=>{
+      DeviceOrientationEvent.requestPermission()
+        .then(p=>{if(p==='granted'){startOrient();sb.style.display='none';}
+                   else document.getElementById('kb-status').textContent='İzin reddedildi ✗';})
+        .catch(()=>{document.getElementById('kb-status').textContent='İzin hatası ✗';});
+    };}
+  } else {
+    startOrient();
   }
 }
+
+let _rawHeading=null,_headingSmooth=0;
+
 function startOrient(){
   if(orientFn)window.removeEventListener('deviceorientation',orientFn);
-  orientFn=e=>{
-    heading=e.webkitCompassHeading!=null?e.webkitCompassHeading:(e.alpha||0);
+  if(orientFn)window.removeEventListener('deviceorientationabsolute',orientFn);
+
+  let usedAbsolute=false;
+
+  const handler=e=>{
+    let h=null;
+    // 1. webkitCompassHeading — iOS (gerçek kuzey)
+    if(e.webkitCompassHeading!=null&&e.webkitCompassHeading>0){
+      h=e.webkitCompassHeading;
+    }
+    // 2. absolute=true ile alpha — Android Chrome
+    else if(e.absolute&&e.alpha!=null){
+      h=(360-e.alpha)%360;
+    }
+    // 3. Fallback: sadece alpha
+    else if(e.alpha!=null){
+      h=(360-e.alpha)%360;
+    }
+    if(h==null)return;
+
+    // Açı sarmalı düzelt (359→1 geçişinde sıçrama olmasın)
+    if(_rawHeading===null){_rawHeading=h;_headingSmooth=h;}
+    let diff=h-_rawHeading;
+    if(diff>180)diff-=360;
+    if(diff<-180)diff+=360;
+    _rawHeading=h;
+    // Düşük geçiş filtresi (titreşimi azalt)
+    _headingSmooth+=diff*0.18;
+    _headingSmooth=(_headingSmooth+360)%360;
+    heading=_headingSmooth;
+
     updateNeedles();
-    document.getElementById('kb-status').textContent='Pusula aktif ✓';
+    document.getElementById('kb-status').textContent=(usedAbsolute?'Manyetik pusula':'GPS pusula')+' aktif ✓';
   };
-  window.addEventListener('deviceorientation',orientFn,true);
+
+  orientFn=handler;
+
+  // Önce absolute dene (Android)
+  window.addEventListener('deviceorientationabsolute',e=>{
+    usedAbsolute=true;handler(e);
+  },true);
+  window.addEventListener('deviceorientation',e=>{
+    if(!usedAbsolute)handler(e);
+  },true);
+
+  document.getElementById('kb-status').textContent='Pusula başlatılıyor...';
 }
+
 function updateNeedles(){
   const nw=document.getElementById('needle-wrap'),qw=document.getElementById('qibla-wrap');
   if(nw)nw.style.transform=`rotate(${-heading}deg)`;
@@ -1580,17 +1641,208 @@ function renderGroupActions(gid){openGroup(gid);}
 // SES SİSTEMİ
 // ═══════════════════════════════════════════
 const SOUNDS=[
-  {id:'ezan1',   name:'Klasik Ezan',    sub:'Geleneksel melodi', ico:'🕌'},
-  {id:'ezan2',   name:'Sabah Ezanı',    sub:'Huzurlu sabah tonu',ico:'🌅'},
-  {id:'ezan3',   name:'Mekke Ezanı',    sub:'Maneviyat dolu',    ico:'🕋'},
-  {id:'ney',     name:'Ney Sesi',       sub:'Tasavvuf tonu',     ico:'🎵'},
-  {id:'kuran',   name:'Kur\'an Tonu',   sub:'Nazik hatırlatma',  ico:'📖'},
-  {id:'gentle',  name:'Yumuşak',        sub:'Hafif uyarı',       ico:'🌙'},
-  {id:'urgent',  name:'Acil',           sub:'Güçlü uyarı',       ico:'🔔'},
-  {id:'silent',  name:'Sessiz',         sub:'Yalnız görsel',     ico:'🔕'},
+  {id:'hicaz',  name:'Hicaz Makamı',   sub:'Klasik ezan makamı', ico:'🕌'},
+  {id:'usshak', name:'Uşşak Makamı',   sub:'Duygusal ve derin',  ico:'🌙'},
+  {id:'rast',   name:'Rast Makamı',    sub:'Huzurlu sabah tonu', ico:'🌅'},
+  {id:'saba',   name:'Saba Makamı',    sub:'Mekke ezanı tonu',   ico:'🕋'},
+  {id:'ney',    name:'Ney Taksimi',    sub:'Tasavvuf / sufi',    ico:'🎵'},
+  {id:'ud',     name:'Ud Teli',        sub:'Telli enstrüman',    ico:'🎸'},
+  {id:'gentle', name:'Yumuşak Çan',    sub:'Hafif hatırlatma',   ico:'🔔'},
+  {id:'silent', name:'Sessiz',         sub:'Yalnız görsel uyarı',ico:'🔕'},
 ];
 
 let customAudioUrl=null,customAudioName=null,customAudio=null,previewAudio=null;
+
+// ── Makam tanımları ────────────────────────
+// Her nota: {f:Hz, d:süre(s), v:vibrato?, g:glide?}
+const MAQAM={
+
+  hicaz:{ // Hicaz — Re Mi♭ Fi# Sol La Si♭ Do Re
+    bpm:52,
+    phrases:[
+      // Cümle 1: yükselen
+      [{f:293.66,d:.55},{f:311.13,d:.3},{f:369.99,d:.65,v:.7},{f:392,d:.45},{f:0,d:.18}],
+      // Cümle 2: orta
+      [{f:440,d:.5},{f:415.3,d:.3},{f:392,d:.6,v:.5},{f:369.99,d:.4},{f:311.13,d:.3},{f:0,d:.2}],
+      // Cümle 3: alçalan karar
+      [{f:369.99,d:.5},{f:349.23,d:.3},{f:311.13,d:.7,v:.8},{f:293.66,d:.9}],
+    ],
+    type:'sine'
+  },
+
+  usshak:{ // Uşşak — Re Mi♭ Fa Sol La Si♭ Do Re  (küçük ikili karakteristik)
+    bpm:46,
+    phrases:[
+      [{f:220,d:.6},{f:246.94,d:.45,v:.4},{f:261.63,d:.55},{f:293.66,d:.7,v:.6},{f:0,d:.22}],
+      [{f:329.63,d:.5},{f:311.13,d:.35},{f:293.66,d:.6,v:.5},{f:261.63,d:.4},{f:0,d:.2}],
+      [{f:246.94,d:.55},{f:220,d:.45,v:.6},{f:196,d:.5},{f:220,d:1.1,v:.9}],
+    ],
+    type:'sine'
+  },
+
+  rast:{ // Rast — Do Re Mi♭ Fa Sol La Si♭ Do (sakin, parlak)
+    bpm:56,
+    phrases:[
+      [{f:261.63,d:.5},{f:293.66,d:.45},{f:329.63,d:.6,v:.4},{f:349.23,d:.5},{f:0,d:.2}],
+      [{f:392,d:.55},{f:440,d:.4,v:.5},{f:392,d:.45},{f:349.23,d:.55},{f:329.63,d:.4},{f:0,d:.18}],
+      [{f:293.66,d:.5},{f:261.63,d:.45,v:.6},{f:246.94,d:.4},{f:261.63,d:1.0,v:.8}],
+    ],
+    type:'sine'
+  },
+
+  saba:{ // Saba — Re Mi♭ Fa♭ Sol La♭ Si♭ Do Re (hüzünlü, otantik)
+    bpm:44,
+    phrases:[
+      [{f:293.66,d:.6},{f:311.13,d:.4},{f:329.63,d:.3},{f:277.18,d:.7,v:.6},{f:0,d:.25}],
+      [{f:293.66,d:.5},{f:349.23,d:.4},{f:392,d:.6,v:.5},{f:369.99,d:.4},{f:349.23,d:.5},{f:0,d:.2}],
+      [{f:329.63,d:.4},{f:311.13,d:.5},{f:293.66,d:.45,v:.7},{f:277.18,d:.4},{f:261.63,d:.4},{f:293.66,d:.9,v:.8}],
+    ],
+    type:'sine'
+  },
+
+  ney:{ // Ney — üfleme, nefes sesi, sufi
+    bpm:38,
+    phrases:[
+      [{f:174.61,d:.8,v:.3},{f:0,d:.12},{f:196,d:.6,v:.4},{f:220,d:.7,v:.5},{f:0,d:.25}],
+      [{f:246.94,d:.7,v:.5},{f:220,d:.55,v:.4},{f:196,d:.75,v:.3},{f:0,d:.3}],
+      [{f:185,d:.6,v:.4},{f:174.61,d:.5,v:.5},{f:164.81,d:.7,v:.3},{f:174.61,d:1.2,v:.6}],
+    ],
+    type:'triangle',breathNoise:true
+  },
+
+  ud:{ // Ud — telli, parmak tırnak sesi (kısa tiz + uzun rezonans)
+    bpm:60,
+    phrases:[
+      [{f:196,d:.12,pluck:true},{f:246.94,d:.12,pluck:true},{f:293.66,d:.2,pluck:true},{f:349.23,d:.35,pluck:true},{f:392,d:.5,pluck:true},{f:0,d:.3}],
+      [{f:440,d:.15,pluck:true},{f:392,d:.12,pluck:true},{f:349.23,d:.2,pluck:true},{f:329.63,d:.35,pluck:true},{f:0,d:.25}],
+      [{f:293.66,d:.15,pluck:true},{f:261.63,d:.12,pluck:true},{f:246.94,d:.5,pluck:true},{f:220,d:.8,pluck:true}],
+    ],
+    type:'sawtooth'
+  },
+
+  gentle:{ // Yumuşak çan / gong
+    bpm:72,
+    phrases:[
+      [{f:528,d:.5,bell:true},{f:0,d:.2},{f:594,d:.45,bell:true},{f:0,d:.18},{f:660,d:.6,bell:true},{f:0,d:.25}],
+      [{f:594,d:.45,bell:true},{f:528,d:.7,bell:true}],
+    ],
+    type:'sine'
+  },
+};
+
+function playMaqam(id,loop){
+  if(id==='silent')return 0;
+  const m=MAQAM[id]||MAQAM.hicaz;
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const masterGain=ctx.createGain();masterGain.gain.value=0.42;
+    // Reverb (konvolüsyon yerine basit delay+feedback)
+    const delay=ctx.createDelay(0.4);delay.delayTime.value=0.22;
+    const fb=ctx.createGain();fb.gain.value=0.28;
+    const wet=ctx.createGain();wet.gain.value=0.22;
+    delay.connect(fb);fb.connect(delay);delay.connect(wet);wet.connect(ctx.destination);
+    masterGain.connect(ctx.destination);masterGain.connect(delay);
+
+    let t=ctx.currentTime+0.05;
+
+    m.phrases.forEach(phrase=>{
+      phrase.forEach(note=>{
+        if(!note.f){t+=note.d;return;}
+        if(note.pluck){
+          // Ud teli: kısa atak + uzun exponential decay + harmonik
+          [1,2,3].forEach((harm,hi)=>{
+            const o=ctx.createOscillator();const g=ctx.createGain();
+            o.type=hi===0?'sawtooth':'sine';
+            o.frequency.value=note.f*harm;
+            const harmGain=[0.5,0.25,0.1][hi];
+            g.gain.setValueAtTime(0,t);
+            g.gain.linearRampToValueAtTime(harmGain,t+0.008);
+            g.gain.exponentialRampToValueAtTime(0.001,t+note.d*3.5);
+            o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+note.d*3.5+0.1);
+          });
+          t+=note.d;return;
+        }
+        if(note.bell){
+          // Çan: hızlı atak çok yavaş decay, inharmonik
+          [1,2.756,5.404].forEach((ratio,hi)=>{
+            const o=ctx.createOscillator();const g=ctx.createGain();
+            o.type='sine';o.frequency.value=note.f*ratio;
+            const hv=[0.4,0.15,0.05][hi];
+            g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(hv,t+0.004);
+            g.gain.exponentialRampToValueAtTime(0.001,t+note.d*4);
+            o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+note.d*4+0.05);
+          });
+          t+=note.d;return;
+        }
+
+        // Normal nota: sin/triangle + harmonik 2+3
+        const osc=ctx.createOscillator();const g=ctx.createGain();
+        osc.type=m.type||'sine';osc.frequency.setValueAtTime(note.f,t);
+
+        // Vibrato
+        if(note.v&&note.v>0){
+          const vib=ctx.createOscillator();const vibG=ctx.createGain();
+          vib.frequency.value=5.2+Math.random()*0.5;vibG.gain.value=0;
+          const vDelay=note.d*0.25;
+          vibG.gain.setValueAtTime(0,t+vDelay);
+          vibG.gain.linearRampToValueAtTime(note.f*0.012*note.v,t+vDelay+0.12);
+          vibG.gain.setValueAtTime(note.f*0.012*note.v,t+note.d*0.8);
+          vibG.gain.linearRampToValueAtTime(0,t+note.d);
+          vib.connect(vibG);vibG.connect(osc.frequency);
+          vib.start(t);vib.stop(t+note.d+0.05);
+        }
+
+        // Ney nefes gürültüsü
+        if(m.breathNoise){
+          const buf=ctx.createBuffer(1,ctx.sampleRate*note.d,ctx.sampleRate);
+          const data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*0.04;
+          const ns=ctx.createBufferSource();ns.buffer=buf;
+          const nf=ctx.createBiquadFilter();nf.type='bandpass';nf.frequency.value=note.f*1.6;nf.Q.value=2;
+          const ng=ctx.createGain();ng.gain.value=0.18;
+          ns.connect(nf);nf.connect(ng);ng.connect(masterGain);ns.start(t);
+        }
+
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.38,t+Math.min(0.08,note.d*0.15));
+        g.gain.setValueAtTime(0.38,t+note.d*0.72);
+        g.gain.exponentialRampToValueAtTime(0.001,t+note.d+0.05);
+        osc.connect(g);g.connect(masterGain);osc.start(t);osc.stop(t+note.d+0.1);
+
+        // 2. harmonik (yarım ses tını zenginleştirme)
+        const o2=ctx.createOscillator();const g2=ctx.createGain();
+        o2.type='sine';o2.frequency.value=note.f*2;
+        g2.gain.setValueAtTime(0,t);g2.gain.linearRampToValueAtTime(0.06,t+0.05);
+        g2.gain.exponentialRampToValueAtTime(0.001,t+note.d*0.8);
+        o2.connect(g2);g2.connect(masterGain);o2.start(t);o2.stop(t+note.d+0.05);
+
+        t+=note.d+0.04;
+      });
+      t+=0.15; // cümleler arası nefes
+    });
+
+    const totalMs=(t-ctx.currentTime)*1000+600;
+    return totalMs;
+  }catch(e){return 4000;}
+}
+
+function playSound(type){
+  if(alarmLoop)return;
+  if(type==='silent')return;
+  if(type==='custom'&&customAudioUrl){
+    const play=()=>{const a=new Audio(customAudioUrl);a.volume=0.85;a.play().catch(()=>{});};
+    play();alarmLoop=setInterval(play,6500);return;
+  }
+  const dur=playMaqam(type);
+  alarmLoop=setInterval(()=>playMaqam(type),(dur||5000)+1000);
+}
+
+function previewSound(type){
+  if(previewAudio){previewAudio.pause();previewAudio=null;}
+  if(type==='silent'){toast('Sessiz modu — görsel uyarı','fa-volume-xmark');return;}
+  playMaqam(type);
+  const nm=SOUNDS.find(x=>x.id===type);
+  toast('🎵 '+(nm?nm.name:type)+' önizleniyor');
+}
 
 function renderSoundGrid(){
   const grid=document.getElementById('sound-grid');if(!grid)return;
@@ -1630,110 +1882,6 @@ function renderSoundGrid(){
 
 function selectSound(id){
   S.cfg.sound=id;save();renderSoundGrid();
-}
-
-// Web Audio ile ezan/namaz melodileri
-function playEzanMelody(type){
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const master=ctx.createGain();master.gain.value=0.4;master.connect(ctx.destination);
-
-    // Her ezan tipi için farklı nota dizisi
-    const melodies={
-      ezan1:{ // Klasik Ezan — maqam Saba benzeri
-        notes:[{f:293.66,d:.6},{f:329.63,d:.4},{f:293.66,d:.3},{f:261.63,d:.5},
-               {f:0,d:.2},{f:293.66,d:.5},{f:349.23,d:.5},{f:329.63,d:.4},{f:293.66,d:.7},
-               {f:0,d:.3},{f:261.63,d:.4},{f:293.66,d:.4},{f:246.94,d:.6},{f:220,d:.9}],
-        type:'sine',vibrato:true
-      },
-      ezan2:{ // Sabah Ezanı — sakin, yükselen
-        notes:[{f:220,d:.5},{f:246.94,d:.4},{f:261.63,d:.5},{f:293.66,d:.6},
-               {f:0,d:.25},{f:329.63,d:.5},{f:293.66,d:.4},{f:261.63,d:.4},{f:246.94,d:.7},
-               {f:0,d:.3},{f:220,d:.5},{f:196,d:.9}],
-        type:'sine',vibrato:true
-      },
-      ezan3:{ // Mekke Ezanı — güçlü, etkileyici
-        notes:[{f:196,d:.4},{f:220,d:.3},{f:246.94,d:.5},{f:261.63,d:.4},{f:293.66,d:.6},
-               {f:329.63,d:.5},{f:0,d:.2},{f:293.66,d:.4},{f:329.63,d:.3},{f:349.23,d:.6},
-               {f:0,d:.25},{f:293.66,d:.4},{f:261.63,d:.5},{f:220,d:.8}],
-        type:'sine',vibrato:true
-      },
-      ney:{ // Ney Sesi — düşük, öfürerek
-        notes:[{f:174.61,d:.7},{f:196,d:.5},{f:220,d:.6},{f:0,d:.15},
-               {f:246.94,d:.5},{f:220,d:.4},{f:196,d:.5},{f:174.61,d:.8},
-               {f:0,d:.3},{f:164.81,d:.6},{f:174.61,d:.9}],
-        type:'triangle',vibrato:false
-      },
-      kuran:{ // Kur'an Tonu — çok nazik
-        notes:[{f:392,d:.5},{f:440,d:.4},{f:392,d:.3},{f:349.23,d:.5},
-               {f:0,d:.2},{f:392,d:.4},{f:440,d:.5},{f:493.88,d:.6},{f:440,d:.4},{f:392,d:.9}],
-        type:'sine',vibrato:false
-      },
-      gentle:{ // Yumuşak
-        notes:[{f:528,d:.4},{f:594,d:.4},{f:660,d:.5},{f:528,d:.7}],
-        type:'sine',vibrato:false
-      },
-      urgent:{ // Acil
-        notes:[{f:1200,d:.15},{f:800,d:.12},{f:1200,d:.15},{f:800,d:.12},{f:1200,d:.2}],
-        type:'square',vibrato:false
-      },
-    };
-
-    const mel=melodies[type]||melodies.ezan1;
-    let t=ctx.currentTime+0.05;
-
-    mel.notes.forEach(note=>{
-      if(!note.f){t+=note.d;return;}
-      const osc=ctx.createOscillator();
-      const g=ctx.createGain();
-      osc.type=mel.type;
-      osc.frequency.setValueAtTime(note.f,t);
-
-      // Vibrato efekti
-      if(mel.vibrato&&note.d>0.4){
-        const lfo=ctx.createOscillator();
-        const lfoG=ctx.createGain();
-        lfo.frequency.value=5.5;lfoG.gain.value=4;
-        lfo.connect(lfoG);lfoG.connect(osc.frequency);
-        lfo.start(t+0.15);lfo.stop(t+note.d);
-      }
-
-      g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(0.35,t+0.06);
-      g.gain.setValueAtTime(0.35,t+note.d*0.6);
-      g.gain.exponentialRampToValueAtTime(0.001,t+note.d);
-
-      osc.connect(g);g.connect(master);
-      osc.start(t);osc.stop(t+note.d+0.05);
-      t+=note.d+0.04;
-    });
-
-    const totalDur=(t-ctx.currentTime+0.5)*1000;
-    return totalDur;
-  }catch(e){return 4000;}
-}
-
-function playSound(type){
-  if(alarmLoop)return;
-  if(type==='silent')return;
-
-  if(type==='custom'&&customAudioUrl){
-    const audio=new Audio(customAudioUrl);
-    audio.volume=0.8;audio.play().catch(()=>{});
-    alarmLoop=setInterval(()=>{const a=new Audio(customAudioUrl);a.volume=0.8;a.play().catch(()=>{});},6000);
-    return;
-  }
-
-  const dur=playEzanMelody(type);
-  alarmLoop=setInterval(()=>playEzanMelody(type),dur+800);
-}
-
-function previewSound(type){
-  // Önceki önizlemeyi durdur
-  if(previewAudio){previewAudio.pause();previewAudio=null;}
-  if(type==='silent'){toast('Sessiz modu — uyarı yok','fa-volume-xmark');return;}
-  playEzanMelody(type);
-  toast('🎵 Önizleniyor: '+(SOUNDS.find(x=>x.id===type)?.name||type));
 }
 
 // Özel ses yükleme
