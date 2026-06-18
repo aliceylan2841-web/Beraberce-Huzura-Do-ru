@@ -811,8 +811,8 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
             <i class="fa-solid fa-copy"></i> Kopyala
           </button>
         </div>
-        <button class="inv-action-btn" onclick="shareInvite()">
-          <i class="fa-solid fa-share"></i> Paylaş (WhatsApp vb.)
+        <button class="inv-action-btn" onclick="shareInvite()" style="background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.35);color:#25d366;font-weight:900;">
+          <i class="fa-brands fa-whatsapp" style="font-size:16px"></i> WhatsApp ile Paylaş
         </button>
       </div>
 
@@ -977,7 +977,6 @@ function genStars(){
 // ═══════════════════════════════════════════
 // SCREENS
 // ═══════════════════════════════════════════
-const showPage=id=>{document.querySelectorAll('.page').forEach(p=>{p.classList.remove('show');p.style.display='none';});const pg=document.getElementById(id);pg.classList.add('show');pg.style.display='';window.scrollTo(0,0);};
 
 let _toastTimer=null;
 function toast(msg,ok=true){
@@ -996,6 +995,14 @@ function toast(msg,ok=true){
   if(_toastTimer)clearTimeout(_toastTimer);
   _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
+
+const showPage=id=>{
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('show');p.style.display='none';});
+  const pg=document.getElementById(id);
+  if(pg){pg.classList.add('show');pg.style.display='';}
+  window.scrollTo(0,0);
+};
+function goMain(){showPage('pg-main');render();renderGroups();renderSozler();}
 function backToMain(){showPage('pg-main');renderGroups();}
 
 // ═══════════════════════════════════════════
@@ -1391,14 +1398,25 @@ function genCode(){
 }
 
 function createGroup(){
-  const name=document.getElementById('cg-name').value.trim();if(!name){toast('Grup adı girin.',false);return;}
+  const name=document.getElementById('cg-name').value.trim();
+  if(!name){toast('Grup adı girin.',false);return;}
   const id='g'+Date.now();
-  const me={name:S.name||'Ben',done:{},isMe:true,kildiAt:''};PK.forEach(k=>me.done[k]=false);
-  const demos=[{name:'Ahmet Yılmaz',done:{},kildiAt:'',isMe:false},{name:'Fatma Şahin',done:{},kildiAt:'',isMe:false}];
-  demos.forEach(d=>PK.forEach(k=>d.done[k]=false));
+  const me={name:S.name||'Ben',done:{},isMe:true,kildiAt:''};
+  PK.forEach(k=>me.done[k]=false);
   const inviteCode=genCode();
-  S.groups.push({id,name,emoji:selEmoVal,inviteCode,members:[me,...demos],chat:[{type:'event',txt:`👤 ${S.name||'Ben'} grubu oluşturdu!`,time:nowTime()}],_dd:tkey()});
-  save();closeModal('cg-modal');toast('"'+name+'" oluşturuldu! 🎉');renderGroups();
+  const newG={id,name,emoji:selEmoVal,inviteCode,
+    members:[me],
+    chat:[{type:'event',txt:`👤 ${S.name||'Ben'} grubu oluşturdu!`,time:nowTime()}],
+    _dd:tkey()};
+  S.groups.push(newG);
+  S.curGroup=id;
+  save();
+  closeModal('cg-modal');
+  confetti();
+  toast('"'+name+'" oluşturuldu! 🎉');
+  renderGroups();
+  // Hemen grup detayına git
+  setTimeout(()=>openGroup(id),300);
 }
 function openAddMember(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
@@ -1461,11 +1479,41 @@ function copyInvite(){
 
 function shareInvite(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const msg=`🕌 "${g.name}" namaz grubuna katıl!\n\nDavet Kodu: *${g.inviteCode}*\n\nCemaatim uygulamasını aç → Gruplar → Gruba Katıl → Kodu gir`;
+  const code=g.inviteCode;
+  const msg=`🕌 "${g.name}" namaz grubuna katılmak ister misin?\n\n📲 Davet Kodu: *${code}*\n\nNasıl katılırsın:\n1. Uygulamayı aç\n2. Gruplar → Gruba Katıl\n3. Kodu gir: ${code}`;
+
+  // 1. Web Share API (HTTPS veya destekleyen tarayıcı)
+  if(navigator.share&&navigator.canShare&&navigator.canShare({text:msg})){
+    navigator.share({title:g.name+' — Namaz Grubu',text:msg})
+      .then(()=>toast('Paylaşıldı! 🎉'))
+      .catch(err=>{if(err.name!=='AbortError')_fallbackShare(msg,code);});
+    return;
+  }
   if(navigator.share){
-    navigator.share({title:'Namaz Grubuna Davet',text:msg}).catch(()=>{});
-  } else if(navigator.clipboard){
-    navigator.clipboard.writeText(msg).then(()=>toast('Mesaj kopyalandı, paylaşabilirsin! 📋'));
+    navigator.share({title:g.name+' — Namaz Grubu',text:msg})
+      .then(()=>toast('Paylaşıldı! 🎉'))
+      .catch(err=>{if(err.name!=='AbortError')_fallbackShare(msg,code);});
+    return;
+  }
+  // 2. Fallback
+  _fallbackShare(msg,code);
+}
+
+function _fallbackShare(msg,code){
+  // WhatsApp direkt link
+  const waUrl='https://wa.me/?text='+encodeURIComponent(msg);
+  // Clipboard + WhatsApp aç
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(msg).then(()=>{
+      toast('Mesaj kopyalandı! WhatsApp açılıyor... 📋');
+      setTimeout(()=>window.open(waUrl,'_blank'),600);
+    }).catch(()=>{
+      window.open(waUrl,'_blank');
+    });
+  } else {
+    // Son çare: prompt içinde göster
+    window.open(waUrl,'_blank');
+    toast('Davet kodu: '+code+' (kopyalayın)');
   }
 }
 
