@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <style>
 :root{
   --bg:#07130d;--bg2:#0e1f16;--card:#1a3326;--card2:#1f3d2e;
@@ -846,7 +847,7 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
         <div class="inv-sec-lbl"><i class="fa-solid fa-camera"></i> QR Kod Tara</div>
         <div class="inv-sec-sub">Kameranı aç ve QR kodu tara</div>
         <div id="qr-reader-wrap" style="display:none">
-          <video id="qr-video" style="width:100%;border-radius:12px;background:#000"></video>
+          <video id="qr-video" autoplay playsinline muted style="width:100%;border-radius:12px;background:#000;max-height:220px;object-fit:cover"></video>
           <div id="qr-scan-lbl" style="text-align:center;font-size:11px;color:var(--t3);margin-top:6px">Kamerayı QR koda doğrult...</div>
           <button class="btn-outline" style="margin-top:8px" onclick="stopQRScan()">
             <i class="fa-solid fa-stop"></i> İptal
@@ -977,7 +978,24 @@ function genStars(){
 // SCREENS
 // ═══════════════════════════════════════════
 const showPage=id=>{document.querySelectorAll('.page').forEach(p=>{p.classList.remove('show');p.style.display='none';});const pg=document.getElementById(id);pg.classList.add('show');pg.style.display='';window.scrollTo(0,0);};
-function goMain(){showPage('pg-main');render();renderGroups();renderSozler();}
+
+let _toastTimer=null;
+function toast(msg,ok=true){
+  const el=document.getElementById('toast');
+  const ico=document.getElementById('t-ico');
+  const txt=document.getElementById('t-msg');
+  if(!el||!txt)return;
+  txt.textContent=msg;
+  if(ico){
+    ico.className=ok===false
+      ?'fa-solid fa-circle-xmark'
+      :(typeof ok==='string'?'fa-solid '+ok:'fa-solid fa-circle-check');
+    ico.style.color=ok===false?'#f87171':'var(--green)';
+  }
+  el.classList.add('show');
+  if(_toastTimer)clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
 function backToMain(){showPage('pg-main');renderGroups();}
 
 // ═══════════════════════════════════════════
@@ -1396,15 +1414,11 @@ function openAddMember(){
 }
 
 function generateInviteAssets(g){
-  // Grup verisini base64 JSON olarak kodla
-  const payload=JSON.stringify({
-    v:1,
-    id:g.id,
-    name:g.name,
-    emoji:g.emoji,
-    code:g.inviteCode
-  });
-  const encoded=btoa(unescape(encodeURIComponent(payload)));
+  // Grup verisini JSON → UTF-8 safe base64
+  const payload=JSON.stringify({v:1,id:g.id,name:g.name,emoji:g.emoji,code:g.inviteCode});
+  let encoded;
+  try{encoded=btoa(unescape(encodeURIComponent(payload)));}
+  catch(e){encoded=btoa(payload);}
 
   // QR kutuyu temizle ve yeni oluştur
   const qrDiv=document.getElementById('qr-canvas');
@@ -1416,7 +1430,9 @@ function generateInviteAssets(g){
       colorDark:'#07130d',colorLight:'#ffffff',
       correctLevel:QRCode.CorrectLevel.M
     });
-  }catch(e){qrDiv.innerHTML='<div style="font-size:11px;color:#888;text-align:center;padding:20px">QR kütüphanesi yükleniyor...</div>';}
+  }catch(e){
+    qrDiv.innerHTML='<div style="font-size:11px;color:#888;text-align:center;padding:20px">QR kütüphanesi yükleniyor...</div>';
+  }
 
   // Davet kodunu göster
   const codeEl=document.getElementById('inv-code-display');
@@ -1468,13 +1484,15 @@ function downloadQR(){
 function joinByCode(){
   const code=document.getElementById('join-code-inp').value.trim().toUpperCase();
   if(code.length!==6){toast('6 haneli kodu eksiksiz gir.',false);return;}
-  // Mevcut gruplarda ara
-  const g=S.groups.find(x=>x.inviteCode===code);
-  if(g){toast('"'+g.name+'" grubuna zaten üyesin!',false);return;}
-  // Başka cihazdan kod geldi: yeni grup olarak ekle (aynı cihaz demo)
+  // Mevcut gruplarda bu kodu ara
+  const existing=S.groups.find(x=>x.inviteCode===code);
+  if(existing){toast('"'+existing.name+'" grubuna zaten üyesin!',false);return;}
+  // Grup adı sor
+  const grpName=prompt('Grubun adını gir (boş bırakırsan "Yeni Grup" olur):','');
+  const finalName=(grpName&&grpName.trim())?grpName.trim():'Yeni Grup';
   const newG={
     id:'g'+Date.now(),
-    name:'Grup ('+code+')',
+    name:finalName,
     emoji:'🕌',
     inviteCode:code,
     members:[{name:S.name||'Ben',done:{},isMe:true,kildiAt:''}],
@@ -1486,39 +1504,54 @@ function joinByCode(){
   closeModal('addmem-modal');
   renderGroups();
   confetti();
-  toast('"'+newG.name+'" grubuna katıldın! 🎉');
+  toast('"'+finalName+'" grubuna katıldın! 🎉');
 }
 
 // ── QR Kamera Tarayıcı ──────────────────────
 let qrStream=null,qrInterval=null;
 
 function startQRScan(){
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Kamera desteklenmiyor.',false);return;}
-  document.getElementById('qr-reader-wrap').style.display='';
-  document.getElementById('qr-scan-btn').style.display='none';
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast('Bu tarayıcıda kamera desteklenmiyor.',false);return;
+  }
+  const wrap=document.getElementById('qr-reader-wrap');
+  const btn=document.getElementById('qr-scan-btn');
+  const lbl=document.getElementById('qr-scan-lbl');
+  wrap.style.display='';btn.style.display='none';
+  if(lbl)lbl.textContent='Kamerayı QR koda doğrult...';
+
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}})
     .then(stream=>{
       qrStream=stream;
       const video=document.getElementById('qr-video');
-      video.srcObject=stream;video.play();
-      // jsQR yoksa manuel kodu yine de kullanabilirler
+      video.srcObject=stream;
+      video.onloadedmetadata=()=>video.play().catch(()=>{});
+
       if(typeof jsQR!=='undefined'){
         const canvas=document.createElement('canvas');
-        const ctx2=canvas.getContext('2d');
+        const ctx2=canvas.getContext('2d',{willReadFrequently:true});
         qrInterval=setInterval(()=>{
-          if(video.readyState===video.HAVE_ENOUGH_DATA){
-            canvas.width=video.videoWidth;canvas.height=video.videoHeight;
-            ctx2.drawImage(video,0,0);
+          if(video.readyState>=2&&video.videoWidth>0){
+            canvas.width=video.videoWidth;
+            canvas.height=video.videoHeight;
+            ctx2.drawImage(video,0,0,canvas.width,canvas.height);
             const imgData=ctx2.getImageData(0,0,canvas.width,canvas.height);
-            const code=jsQR(imgData.data,imgData.width,imgData.height);
-            if(code){handleQRResult(code.data);stopQRScan();}
+            const result=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'dontInvert'});
+            if(result&&result.data){
+              handleQRResult(result.data);
+              stopQRScan();
+            }
           }
-        },250);
+        },200);
+        if(lbl)lbl.textContent='Kamerayı QR koda doğrult... 🔍';
       } else {
-        document.getElementById('qr-scan-lbl').textContent='📷 Kamera açık — QR tarama için jsQR kütüphanesi gerekli. Kod ile katılabilirsiniz.';
+        if(lbl)lbl.textContent='⚠️ QR okuyucu yüklenemedi. Kod ile katılın.';
       }
     })
-    .catch(()=>{toast('Kamera izni gerekli.',false);stopQRScan();});
+    .catch(err=>{
+      toast('Kamera izni gerekli veya başka uygulama kullanıyor.',false);
+      stopQRScan();
+    });
 }
 
 function stopQRScan(){
@@ -1532,9 +1565,11 @@ function stopQRScan(){
 
 function handleQRResult(data){
   try{
-    const payload=JSON.parse(decodeURIComponent(escape(atob(data))));
+    let jsonStr;
+    try{jsonStr=decodeURIComponent(escape(atob(data)));}
+    catch(e){jsonStr=atob(data);}
+    const payload=JSON.parse(jsonStr);
     if(!payload.v||!payload.name){toast('Geçersiz QR kod.',false);return;}
-    // Zaten üye mi?
     const exists=S.groups.find(x=>x.id===payload.id||x.inviteCode===payload.code);
     if(exists){toast('"'+exists.name+'" grubuna zaten üyesin!',false);return;}
     const newG={
@@ -1550,7 +1585,7 @@ function handleQRResult(data){
     S.groups.push(newG);save();
     closeModal('addmem-modal');renderGroups();confetti();
     toast('"'+newG.name+'" grubuna katıldın! 🎉');
-  }catch(e){toast('QR kod okunamadı.',false);}
+  }catch(e){toast('QR kod okunamadı: '+e.message,false);}
 }
 
 function addMember(){
@@ -1561,9 +1596,13 @@ function addMember(){
   const m={name,done:{},kildiAt:'',isMe:false};PK.forEach(k=>m.done[k]=false);
   g.members.push(m);
   g.chat.push({type:'event',txt:`👤 ${name} gruba eklendi!`,time:nowTime()});
-  save();closeModal('addmem-modal');
-  document.getElementById('gd-sub').textContent=g.members.length+' üye';
-  toast(name+' eklendi! 👤');renderNamazTab(g);
+  save();
+  document.getElementById('addmem-inp').value='';
+  const gdSub=document.getElementById('gd-sub');
+  if(gdSub)gdSub.textContent=g.members.length+' üye';
+  toast(name+' eklendi! 👤');
+  renderNamazTab(g);
+  renderGroups();
 }
 
 // ── Member edit / delete ─────────────────────────────
