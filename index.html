@@ -432,7 +432,32 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
 .upload-sound-btn{display:inline-flex;align-items:center;gap:7px;background:rgba(61,220,132,.08);border:1.5px dashed rgba(61,220,132,.35);border-radius:11px;padding:9px 16px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--green);cursor:pointer;transition:all .2s;width:100%;justify-content:center;box-sizing:border-box;}
 .upload-sound-btn:active{background:rgba(61,220,132,.15);}
 
-/* ── DAVET SİSTEMİ ── */
+/* ── CHAT GELİŞTİRMELER ── */
+.quick-emojis{display:none;padding:7px 10px;gap:5px;overflow-x:auto;border-top:1px solid var(--border);background:var(--card);-webkit-overflow-scrolling:touch;}
+.quick-emojis.show{display:flex;}
+.quick-emojis button{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;font-size:20px;padding:5px 9px;cursor:pointer;flex-shrink:0;transition:transform .1s;}
+[data-theme="light"] .quick-emojis button{background:rgba(0,0,0,.04);}
+.quick-emojis button:active{transform:scale(1.25);}
+.emoji-toggle-btn{background:none;border:none;color:var(--t3);font-size:18px;padding:0 6px;cursor:pointer;flex-shrink:0;}
+.emoji-toggle-btn:active{color:var(--green);}
+.chat-inp-area{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--border);background:var(--card);}
+.msg-reactions{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.msg-react{background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:99px;font-size:13px;padding:2px 8px;cursor:pointer;display:flex;align-items:center;gap:3px;transition:all .15s;}
+[data-theme="light"] .msg-react{background:rgba(0,0,0,.04);}
+.msg-react:active{transform:scale(1.15);}
+.msg-react.mine{background:rgba(61,220,132,.12);border-color:rgba(61,220,132,.3);}
+.msg-react-cnt{font-size:11px;font-weight:800;color:var(--t2);}
+/* Namaz bildirim mesajı */
+.chat-pray-ev{background:linear-gradient(135deg,rgba(61,220,132,.12),rgba(61,220,132,.05));border:1px solid rgba(61,220,132,.25);border-radius:13px;padding:10px 13px;margin:4px 0;display:flex;align-items:center;gap:10px;}
+.chat-pray-ico{font-size:24px;flex-shrink:0;}
+.chat-pray-info{flex:1;}
+.chat-pray-name{font-size:12px;font-weight:800;color:var(--green);}
+.chat-pray-txt{font-size:11px;color:var(--t2);margin-top:1px;}
+.chat-pray-time{font-size:10px;color:var(--t3);margin-top:2px;}
+/* Üye tıklama DM */
+.dm-btn{background:rgba(61,220,132,.08);border:1px solid rgba(61,220,132,.2);border-radius:8px;color:var(--green);font-family:'Cairo',sans-serif;font-size:11px;font-weight:800;padding:4px 10px;cursor:pointer;margin-top:5px;}
+
+::-webkit-scrollbar{width:0;}
 .inv-tabs{display:flex;gap:6px;margin-bottom:16px;}
 .inv-tab{flex:1;background:rgba(255,255,255,.05);border:1.5px solid var(--border);border-radius:11px;padding:10px 6px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;color:var(--t3);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px;}
 [data-theme="light"] .inv-tab{background:rgba(0,0,0,.04);}
@@ -700,8 +725,20 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
     <div id="gtab-gchat" class="gtab-body" style="padding:0;">
       <div class="chat-outer">
         <div class="chat-msgs" id="chat-msgs"></div>
+        <!-- Hızlı emoji tepki satırı -->
+        <div class="quick-emojis" id="quick-emojis">
+          <button onclick="quickEmoji('🤲')">🤲</button>
+          <button onclick="quickEmoji('🕌')">🕌</button>
+          <button onclick="quickEmoji('✅')">✅</button>
+          <button onclick="quickEmoji('😊')">😊</button>
+          <button onclick="quickEmoji('👍')">👍</button>
+          <button onclick="quickEmoji('🌙')">🌙</button>
+          <button onclick="quickEmoji('🙏')">🙏</button>
+          <button onclick="quickEmoji('💚')">💚</button>
+        </div>
         <div class="chat-inp-area">
-          <input type="text" class="chat-inp" id="chat-inp" placeholder="Mesajınızı yazın..." maxlength="200" onkeydown="chatKey(event)">
+          <button class="emoji-toggle-btn" onclick="toggleQuickEmoji()" title="Emoji"><i class="fa-solid fa-face-smile"></i></button>
+          <input type="text" class="chat-inp" id="chat-inp" placeholder="Mesaj yaz..." maxlength="300" onkeydown="chatKey(event)">
           <button class="send-btn" onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
       </div>
@@ -1250,32 +1287,27 @@ function delSoz(i){S.sozler.splice(i,1);save();renderSozler();toast('Silindi.');
 const avC=n=>{let s=0;for(const c of n)s+=c.charCodeAt(0);return AVC[s%AVC.length];};
 const initials=n=>(n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
 function renderGroups(){
-  const gl=document.getElementById('groups-list');if(!gl)return;gl.innerHTML='';
-  if(!S.groups.length){gl.innerHTML='<div style="text-align:center;padding:32px 20px;color:var(--t3);font-size:13px;line-height:1.8">Henüz bir grubunuz yok.<br>Bir grup oluşturun ve arkadaşlarınızı davet edin!</div>';return;}
-  const cv=curVakit();
+  const el=document.getElementById('grp-list');if(!el)return;
+  el.innerHTML='';
   S.groups.forEach(g=>{
-    const kildi=g.members.filter(m=>m.done[cv]).length,total=g.members.length,pct=total?Math.round(kildi/total*100):0;
-    const ac=avC(g.name);
+    const kd=g.members.filter(m=>m.done[curVakit()]);
+    const lastMsg=g.chat.filter(m=>m.type==='msg'||m.type==='pray').slice(-1)[0];
+    const unread=g._lastRead?g.chat.filter((m,i)=>i>=(g._lastReadIdx||0)&&(m.type==='msg'||m.type==='pray')&&!m.mine).length:0;
     const card=document.createElement('div');card.className='grp-card';
     card.innerHTML=`
-      <div onclick="openGroup('${g.id}')" style="cursor:pointer">
-        <div class="gc-row">
-          <div class="gc-emo" style="background:${ac.bg};color:${ac.cl}">${g.emoji}</div>
-          <div class="gc-info">
-            <div class="gc-name">${g.name}</div>
-            <div class="gc-meta"><i class="fa-solid fa-users" style="font-size:10px"></i> ${total} üye · ${PL[cv]||'—'} vakti</div>
-          </div>
-          <div style="display:flex;gap:5px;flex-shrink:0">
-            <button onclick="event.stopPropagation();quickEditGroup('${g.id}')" style="width:30px;height:30px;border-radius:8px;background:rgba(232,197,71,.1);border:1px solid rgba(232,197,71,.25);color:var(--gold);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-pen"></i></button>
-            <button onclick="event.stopPropagation();quickDeleteGroup('${g.id}')" style="width:30px;height:30px;border-radius:8px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);color:var(--red);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-        <div class="gc-prog">
-          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
-          <div class="prog-labels"><span>${PL[cv]} namazı</span><span class="cnt">${kildi}/${total} kıldı</span></div>
-        </div>
+      <div class="grp-emo">${g.emoji}</div>
+      <div class="grp-info">
+        <div class="grp-name">${g.name}</div>
+        <div class="grp-sub">${lastMsg?(lastMsg.type==='pray'?'🕌 '+lastMsg.sender+' namaz kıldı':lastMsg.sender+': '+lastMsg.txt.slice(0,28)+(lastMsg.txt.length>28?'…':'')):g.members.length+' üye'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <span class="bdg g" style="font-size:9px">${kd.length}/${g.members.length}</span>
+        ${unread>0?`<span style="background:var(--green2);color:#fff;font-size:10px;font-weight:900;border-radius:99px;padding:1px 7px;min-width:18px;text-align:center">${unread}</span>`:''}
       </div>`;
-    gl.appendChild(card);
+    card.onclick=()=>openGroup(g.id);
+    const actWrap=document.createElement('div');actWrap.className='grp-act-wrap';
+    actWrap.innerHTML=`<button onclick="event.stopPropagation();quickEditGroup('${g.id}')"><i class="fa-solid fa-pen"></i></button><button onclick="event.stopPropagation();quickDeleteGroup('${g.id}')"><i class="fa-solid fa-trash"></i></button>`;
+    card.appendChild(actWrap);el.appendChild(card);
   });
 }
 function openGroup(id){
@@ -1304,43 +1336,137 @@ function renderNamazTab(g){
   [...g.members].sort((a,b)=>(b.done[cv]?1:0)-(a.done[cv]?1:0)).forEach(m=>{
     const ac=avC(m.name),kd=m.done[cv];
     const item=document.createElement('div');item.className='mem-item'+(kd?' kdi':' wait');
-    item.innerHTML=`<div class="mem-left"><div class="mem-av" style="background:${ac.bg};color:${ac.cl}">${initials(m.name)}</div><div><div class="mem-name">${m.name}${m.isMe?' <span style="font-size:9px;background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:99px;font-weight:800">Ben</span>':''}</div><div class="mem-sub ${kd?'g':'a'}">${kd?(m.kildiAt||'Kıldı'):'Henüz kılmadı...'}</div></div></div><span class="bdg ${kd?'g':'a'}"><i class="fa-solid ${kd?'fa-check':'fa-hourglass-half'}" style="font-size:9px"></i> ${kd?'Kıldı':'Bekliyor'}</span>`;
+    const dmBtn=!m.isMe?`<button class="dm-btn" onclick="dmUser('${m.name}')"><i class="fa-solid fa-comment"></i> Mesaj</button>`:'';
+    item.innerHTML=`<div class="mem-left"><div class="mem-av" style="background:${ac.bg};color:${ac.cl}">${initials(m.name)}</div><div><div class="mem-name">${m.name}${m.isMe?' <span style="font-size:9px;background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:99px;font-weight:800">Ben</span>':''}</div><div class="mem-sub ${kd?'g':'a'}">${kd?(m.kildiAt||'Kıldı'):'Henüz kılmadı...'}</div>${dmBtn}</div></div><span class="bdg ${kd?'g':'a'}"><i class="fa-solid ${kd?'fa-check':'fa-hourglass-half'}" style="font-size:9px"></i> ${kd?'Kıldı':'Bekliyor'}</span>`;
     sl.appendChild(item);
   });
 }
 function handleGroupKil(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
   const cv=curVakit();const me=g.members.find(m=>m.isMe);
-  if(!me||me.done[cv]){toast('Bu vakti zaten kıldın!');return;}
+  if(!me||me.done[cv]){toast('Bu vakti zaten kıldın! ✅');return;}
   me.done[cv]=true;me.kildiAt=nowTime()+' kıldı';
-  g.chat.push({type:'event',txt:'🕌 '+(S.name||me.name)+' '+(PL[cv]||cv).toLowerCase()+' namazını kıldı!',time:nowTime()});
+  // Gruba zengin namaz bildirimi gönder
+  g.chat.push({
+    type:'pray',
+    sender:S.name||me.name,
+    vakit:PL[cv]||cv,
+    time:nowTime(),
+    msg:_prayMsg(PL[cv]||cv)
+  });
   S.done[cv]=true;save();confetti();showKilModal(cv);renderNamazTab(g);renderDots();renderList();renderGroups();
+  // Eğer chat açıksa yenile
+  if(document.getElementById('gtab-gchat').classList.contains('show'))renderChat();
+  // Diğer üyelerden otomatik tebrik
+  _autoReplyPray(g,cv);
 }
+
+const _prayMsgs={
+  'Sabah':['🌅 Günün ilk ibadetini tamamladı! Hayırlı sabahlar.','🌄 Sabah namazıyla gündüze başladı. MaşAllah!','⭐ Fecrin bereketini yaşadı. Allah kabul etsin.'],
+  'Öğle':['☀️ Öğle vakti Rabbine yöneldi.','🕐 Gün ortasında namazını kıldı. Hayırlı olsun!','✨ Öğle namazını eda etti. Allah kabul etsin.'],
+  'İkindi':['🌤️ İkindi namazını kıldı. Hayırlı ikindiler!','🌻 İkindi vaktini ihya etti. Barakallah!','🙏 Günün ortasında ibadetini tamamladı.'],
+  'Akşam':['🌆 Akşam namazını kıldı. Hayırlı akşamlar!','🌇 Gün batımında Rabbine yöneldi. MaşAllah.','🌅 Akşam vakti namazını eda etti.'],
+  'Yatsı':['🌙 Yatsı namazını kıldı. Hayırlı geceler!','⭐ Gecenin ilk ibadetini tamamladı.','🌟 Yatsı vaktini ihya etti. Allah kabul etsin.'],
+};
+function _prayMsg(vakit){
+  const arr=_prayMsgs[vakit]||['🕌 Namazını kıldı. Allah kabul etsin!'];
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+function _autoReplyPray(g,cv){
+  const replies=['Allah kabul etsin 🤲','MaşAllah! 🕌','Barakallahufik! ✨','Hayırlı olsun 🌙','Âmin! Allah razı olsun 🙏','Tebrikler, Allah kabul etsin 💚','İnşallah hep böyle devam 🌅'];
+  const others=g.members.filter(m=>!m.isMe);
+  others.forEach((o,i)=>{
+    if(Math.random()<0.7){
+      setTimeout(()=>{
+        g.chat.push({type:'msg',sender:o.name,mine:false,txt:replies[Math.floor(Math.random()*replies.length)],time:nowTime(),reactions:[]});
+        save();
+        if(document.getElementById('gtab-gchat').classList.contains('show'))renderChat();
+      },1200+(i*800)+Math.random()*1000);
+    }
+  });
+}
+
 function renderChat(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
   const el=document.getElementById('chat-msgs');el.innerHTML='';
-  g.chat.forEach(m=>{
-    if(m.type==='event'){const d=document.createElement('div');d.className='chat-ev';d.textContent=m.txt;el.appendChild(d);return;}
+  g.chat.forEach((m,idx)=>{
+    // Namaz bildirimi
+    if(m.type==='pray'){
+      const d=document.createElement('div');d.className='chat-pray-ev';
+      d.innerHTML=`<div class="chat-pray-ico">🕌</div><div class="chat-pray-info"><div class="chat-pray-name">${m.sender} · ${m.vakit} Namazı</div><div class="chat-pray-txt">${m.msg}</div><div class="chat-pray-time">${m.time}</div></div><span style="font-size:20px">✅</span>`;
+      el.appendChild(d);return;
+    }
+    // Sistem olayı
+    if(m.type==='event'){
+      const d=document.createElement('div');d.className='chat-ev';d.textContent=m.txt;el.appendChild(d);return;
+    }
+    // Normal mesaj
     const wrap=document.createElement('div');wrap.className='msg'+(m.mine?' me':'');
     const ac=avC(m.sender||'X');
-    wrap.innerHTML=(!m.mine?`<div class="msg-av" style="background:${ac.bg};color:${ac.cl}">${initials(m.sender)}</div>`:'')+
-      '<div><div class="bubble">'+(!m.mine?`<div class="msg-sender" style="color:${ac.cl}">${m.sender}</div>`:'')+
-      '<div class="msg-text">'+m.txt+'</div><div class="msg-time">'+m.time+'</div></div></div>'+
+    const reacts=m.reactions||[];
+    const reactHtml=reacts.length?`<div class="msg-reactions">${reacts.map((r,ri)=>`<button class="msg-react${r.mine?' mine':''}" onclick="toggleReact(${idx},${ri})">${r.emoji} <span class="msg-react-cnt">${r.count}</span></button>`).join('')}</div>`:'';
+    wrap.innerHTML=
+      (!m.mine?`<div class="msg-av" style="background:${ac.bg};color:${ac.cl};cursor:pointer" onclick="dmUser('${m.sender}')">${initials(m.sender)}</div>`:'')+
+      `<div><div class="bubble">
+        ${!m.mine?`<div class="msg-sender" style="color:${ac.cl}">${m.sender}</div>`:''}
+        <div class="msg-text">${escHtml(m.txt)}</div>
+        ${reactHtml}
+        <div class="msg-time">${m.time} <button onclick="addReact(${idx})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;padding:0 2px;margin-left:4px">😊</button></div>
+      </div></div>`+
       (m.mine?`<div class="msg-av" style="background:rgba(61,220,132,.15);color:var(--green)">${initials(S.name||'B')}</div>`:'');
     el.appendChild(wrap);
   });
   el.scrollTop=el.scrollHeight;
 }
+
+function escHtml(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
 function sendMsg(){
-  const inp=document.getElementById('chat-inp');const txt=inp.value.trim();if(!txt)return;
+  const inp=document.getElementById('chat-inp');
+  const txt=inp.value.trim();if(!txt)return;
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  g.chat.push({type:'msg',sender:S.name||'Ben',mine:true,txt,time:nowTime()});inp.value='';save();renderChat();
-  if(g.members.length>1&&Math.random()>.4){
-    const o=g.members.find(m=>!m.isMe);
-    if(o){const r=['Allah kabul etsin 🤲','MaşAllah kardeşim','Barakallahufik!','Hayırlı olsun','Amin 🌙','Aynı şekilde inşallah 🙏','Allah razı olsun'];
-      setTimeout(()=>{g.chat.push({type:'msg',sender:o.name,mine:false,txt:r[Math.floor(Math.random()*r.length)],time:nowTime()});save();if(document.getElementById('gtab-gchat').classList.contains('show'))renderChat();},1000+Math.random()*2000);
-    }
-  }
+  g.chat.push({type:'msg',sender:S.name||'Ben',mine:true,txt,time:nowTime(),reactions:[]});
+  inp.value='';save();renderChat();
+}
+
+function quickEmoji(e){
+  const inp=document.getElementById('chat-inp');
+  inp.value+=e;inp.focus();
+}
+function toggleQuickEmoji(){
+  document.getElementById('quick-emojis').classList.toggle('show');
+}
+
+// Birinin avatarına tıklayınca sohbet kutusuna @mention yaz
+function dmUser(name){
+  const inp=document.getElementById('chat-inp');
+  inp.value='@'+name+' ';inp.focus();
+  // Chat sekmesine geç
+  const chatTab=document.querySelector('.gtab:nth-child(2)');
+  if(chatTab)showGTab('gchat',chatTab);
+}
+
+const _reactEmojis=['❤️','😂','😮','😢','👍','🤲','🕌','✅'];
+function addReact(msgIdx){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g||!g.chat[msgIdx])return;
+  const msg=g.chat[msgIdx];
+  // Mini seçici göster — basit prompt
+  const e=_reactEmojis[Math.floor(Math.random()*4)]; // Basitçe random seç
+  _doReact(g,msg,e);
+}
+function toggleReact(msgIdx,reactIdx){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g||!g.chat[msgIdx])return;
+  const r=g.chat[msgIdx].reactions[reactIdx];if(!r)return;
+  if(r.mine){r.count--;r.mine=false;if(r.count<=0)g.chat[msgIdx].reactions.splice(reactIdx,1);}
+  else{r.count++;r.mine=true;}
+  save();renderChat();
+}
+function _doReact(g,msg,emoji){
+  if(!msg.reactions)msg.reactions=[];
+  const ex=msg.reactions.find(r=>r.emoji===emoji);
+  if(ex){if(!ex.mine){ex.count++;ex.mine=true;}}
+  else{msg.reactions.push({emoji,count:1,mine:true});}
+  save();renderChat();
 }
 function chatKey(e){if(e.key==='Enter')sendMsg();}
 function renderStats(){
