@@ -953,6 +953,7 @@ function load(){
     if(d.name!==undefined)S.name=d.name;
     if(d.city)S.city=d.city;
     if(d.lat)S.lat=d.lat;if(d.lon)S.lon=d.lon;
+    if(d.gpsLabel)S.gpsLabel=d.gpsLabel;
     if(d.alarms)S.alarms={...S.alarms,...d.alarms};
     if(d.cfg)S.cfg={...S.cfg,...d.cfg};
     if(d.groups)S.groups=d.groups;
@@ -965,7 +966,7 @@ function load(){
     });
   }catch(e){}
 }
-function save(){try{localStorage.setItem('cm6',JSON.stringify({name:S.name,city:S.city,lat:S.lat,lon:S.lon,alarms:S.alarms,cfg:S.cfg,groups:S.groups,sozler:S.sozler,done:S.done}));}catch(e){}}
+function save(){try{localStorage.setItem('cm6',JSON.stringify({name:S.name,city:S.city,lat:S.lat,lon:S.lon,gpsLabel:S.gpsLabel,alarms:S.alarms,cfg:S.cfg,groups:S.groups,sozler:S.sozler,done:S.done}));}catch(e){}}
 
 // ═══════════════════════════════════════════
 // PRAYER CALC (UTC+3 FIXED)
@@ -991,7 +992,29 @@ function calcT(lat,lon,date,meth){
 const toMin=t=>{if(!t||t==='--:--')return 9999;const[h,m]=t.split(':').map(Number);return h*60+m;};
 const nowMin=()=>{const n=new Date();return n.getHours()*60+n.getMinutes();};
 const nowTime=()=>{const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');};
-const nearCity=(la,lo)=>{let b='istanbul',bd=1e9;for(const[k,c]of Object.entries(CITIES)){const d=Math.hypot(la-c.lat,lo-c.lon);if(d<bd){bd=d;b=k;}}return b;};
+const nearCity=(la,lo)=>{
+  let b='istanbul',bd=1e9;
+  for(const[k,c]of Object.entries(CITIES)){
+    const d=Math.hypot(la-c.lat,lo-c.lon);
+    if(d<bd){bd=d;b=k;}
+  }
+  return b;
+};
+
+// GPS ile konum alınca il/ilçe adını reverse geocoding ile çek
+async function reverseGeocode(lat,lon){
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=tr`,{headers:{'Accept-Language':'tr'}});
+    const d=await r.json();
+    const addr=d.address||{};
+    // İlçe > şehir > il sıralaması
+    const ilce=addr.town||addr.city_district||addr.suburb||addr.village||'';
+    const il=addr.province||addr.state||addr.county||'';
+    if(ilce&&il)return ilce+' · '+il;
+    if(il)return il;
+    return null;
+  }catch(e){return null;}
+}
 
 // ═══════════════════════════════════════════
 // THEME & STARS
@@ -1072,9 +1095,16 @@ function getLocation(){
   if(!navigator.geolocation){toast('Konum desteklenmiyor, şehir seçin.',false);return;}
   toast('Konum alınıyor...','fa-location-crosshairs');
   navigator.geolocation.getCurrentPosition(
-    p=>{S.lat=p.coords.latitude;S.lon=p.coords.longitude;S.city=nearCity(S.lat,S.lon);
+    p=>{
+      S.lat=p.coords.latitude;S.lon=p.coords.longitude;
+      S.city=nearCity(S.lat,S.lon);S.gpsLabel=null;
       const ni=document.getElementById('inp-name');if(ni&&ni.value.trim())S.name=ni.value.trim();
-      save();toast('Konum alındı: '+(CITIES[S.city]?.n||''));goMain();},
+      save();goMain();
+      toast('Konum alındı ✓');
+      reverseGeocode(S.lat,S.lon).then(label=>{
+        if(label){S.gpsLabel=label;save();render();}
+      });
+    },
     e=>{const msgs={1:'Konum izni reddedildi.',2:'Konum bulunamadı.',3:'Zaman aşımı.'};toast((msgs[e.code]||'Konum alınamadı.')+' Şehir seçin.',false);},
     {timeout:12000,enableHighAccuracy:true,maximumAge:0}
   );
@@ -1083,9 +1113,16 @@ function getLocSet(){
   if(!navigator.geolocation){toast('Konum desteklenmiyor.',false);return;}
   toast('Güncelleniyor...','fa-location-crosshairs');
   navigator.geolocation.getCurrentPosition(
-    p=>{S.lat=p.coords.latitude;S.lon=p.coords.longitude;S.city=nearCity(S.lat,S.lon);
+    p=>{
+      S.lat=p.coords.latitude;S.lon=p.coords.longitude;
+      S.city=nearCity(S.lat,S.lon);S.gpsLabel=null;
       const sc=document.getElementById('set-city');if(sc)sc.value=S.city;
-      render();initKible();save();toast('Konum güncellendi: '+(CITIES[S.city]?.n||''));},
+      save();render();initKible();
+      toast('Konum güncellendi ✓');
+      reverseGeocode(S.lat,S.lon).then(label=>{
+        if(label){S.gpsLabel=label;save();render();toast('Konum: '+label);}
+      });
+    },
     e=>{toast('Konum alınamadı. Şehir seçin.',false);},
     {timeout:12000,enableHighAccuracy:true,maximumAge:0}
   );
@@ -1093,7 +1130,7 @@ function getLocSet(){
 function doSetup(){
   const c=document.getElementById('sel-city').value,n=document.getElementById('inp-name').value.trim();
   if(!c&&!S.lat){toast('Lütfen şehir seçin veya konum izni verin.',false);return;}
-  if(c){const cd=CITIES[c];S.lat=cd.lat;S.lon=cd.lon;S.city=c;}
+  if(c){const cd=CITIES[c];S.lat=cd.lat;S.lon=cd.lon;S.city=c;S.gpsLabel=null;}
   S.name=n;save();goMain();
 }
 
@@ -1107,7 +1144,7 @@ function render(){
   const h=now.getHours();
   const greet=h<5?'Hayırlı geceler':h<12?'Hayırlı sabahlar':h<17?'Hayırlı öğleler':h<20?'Hayırlı akşamlar':'Hayırlı geceler';
   document.getElementById('greet').textContent=greet;
-  const cn=CITIES[S.city]?.n||'';
+  const cn=S.gpsLabel||(CITIES[S.city]?.n||'');
   document.getElementById('uname').textContent=S.name?S.name+' · '+cn:(cn||'Namaz Vakitleri');
   document.getElementById('hijri').textContent=hijriDate();
   renderNext();
