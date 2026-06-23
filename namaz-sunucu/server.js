@@ -344,7 +344,7 @@ app.get('/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOSt
 
 
 // ── ARAYÜZ (HTML) SERVİS ETME AYARI (Beyaz Ekran Çözümü) ─────────────
-const path = require('path');
+// NOT: const path satırı yukarıda zaten olduğu için buradan silindi.
 
 // 'namaz-sunucu' klasörünü ve ana dizini dışarıya açıyoruz (CSS, JS ve diğer varlıklar için)
 app.use(express.static(path.join(__dirname, 'namaz-sunucu')));
