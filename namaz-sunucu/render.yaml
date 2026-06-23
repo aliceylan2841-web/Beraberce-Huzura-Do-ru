@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: namaz-takip-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: DB_PATH
+        value: /tmp/namaz.db
+    # Ücretsiz planda uyur — ilk istek 30sn gecikebilir
+    # Kalıcı veritabanı için aşağıyı aç:
+    # disk:
+    #   name: namaz-db
+    #   mountPath: /data
+    #   sizeGB: 1
