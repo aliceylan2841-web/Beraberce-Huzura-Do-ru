@@ -275,6 +275,7 @@ app.patch('/api/groups/:id/done', (req, res) => {
 
   res.json({ ok: true });
 });
+// ── Grup Sohbet ve Üyelik API'leri ──────────────────────────────────
 
 // Sohbet mesajı gönder
 // POST /api/groups/:id/chat
@@ -340,6 +341,20 @@ app.delete('/api/groups/:id/leave', (req, res) => {
 
 // ── Sağlık kontrolü ──────────────────────────────────
 app.get('/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+
+
+// ── ARAYÜZ (HTML) SERVİS ETME AYARI (Beyaz Ekran Çözümü) ─────────────
+const path = require('path');
+
+// 'namaz-sunucu' klasörünü ve ana dizini dışarıya açıyoruz (CSS, JS ve diğer varlıklar için)
+app.use(express.static(path.join(__dirname, 'namaz-sunucu')));
+app.use(express.static(__dirname));
+
+// Birisi doğrudan siteye girdiğinde ("/") index_server.html dosyasını açıyoruz
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'namaz-sunucu', 'index_server.html'));
+});
+
 
 // ── Sunucuyu başlat ──────────────────────────────────
 app.listen(PORT, () => {
