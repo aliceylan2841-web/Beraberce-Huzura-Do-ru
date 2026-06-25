@@ -781,8 +781,8 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
 </div>
 
 <!-- KIL MODAL -->
-<div class="modal-ov" id="kil-modal">
-  <div class="kil-box">
+<div class="modal-ov" id="kil-modal" onclick="closeModal('kil-modal')">
+  <div class="kil-box" onclick="event.stopPropagation()">
     <div class="m-handle"></div>
     <div class="m-ico" id="m-ico">🤲</div>
     <div class="m-vakit" id="m-vakit"></div>
@@ -794,8 +794,8 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
 </div>
 
 <!-- CREATE GROUP MODAL -->
-<div class="modal-ov" id="cg-modal">
-  <div class="modal-box">
+<div class="modal-ov" id="cg-modal" onclick="closeModal('cg-modal')">
+  <div class="modal-box" onclick="event.stopPropagation()">
     <div class="m-handle"></div>
     <h3>Yeni Grup Oluştur</h3>
     <div class="fl">Grup Adı</div>
@@ -960,7 +960,8 @@ let alarmLoop=null,schedIds=[],selEmoVal='🕌',orientFn=null,heading=0,qibla=0;
 const tkey=()=>{const d=new Date();return`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;};
 
 // ── Render.com URL — deploy sonrası buraya kendi URL'ini yaz ──
-const API=localStorage.getItem('cm6_api')||'https://beraberce-huzura-do-ru.onrender.com';
+const API=localStorage.getItem('cm6_api')||'https://SENIN-UYGULAMANIN-ADI.onrender.com';
+
 // Cihaza özel sabit kullanıcı ID
 function getUID(){
   let id=localStorage.getItem('cm6_uid');
@@ -971,10 +972,7 @@ function getUID(){
 // Ortak fetch sarmalayıcısı
 async function apiFetch(path,opts={}){
   try{
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),5000); // 5sn timeout
-    const r=await fetch(API+path,{...opts,signal:ctrl.signal,headers:{'Content-Type':'application/json','x-user-id':getUID(),...(opts.headers||{})}});
-    clearTimeout(tid);
+    const r=await fetch(API+path,{...opts,headers:{'Content-Type':'application/json','x-user-id':getUID(),...(opts.headers||{})}});
     if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||r.status);}
     return await r.json();
   }catch(e){console.warn('API:',e.message);return null;}
@@ -991,7 +989,14 @@ function syncBadge(txt,dur=3000){
 // ── Kullanıcı verisi ──────────────────────────────────
 
 async function load(){
-  // Sadece grupları yükle (kullanıcı verisi DOMContentLoaded'da yüklenir)
+  // 1) localStorage — anlık başlat
+  try{_applyUser(JSON.parse(localStorage.getItem('cm6')||'{}'));}catch(e){}
+  // 2) Sunucudan güncel çek
+  syncBadge('⏳ Yükleniyor...',0);
+  const d=await apiFetch('/api/user');
+  if(d){_applyUser(d);localStorage.setItem('cm6',JSON.stringify(d));syncBadge('✅ Senkronize');}
+  else{syncBadge('📴 Çevrimdışı');}
+  // 3) Gruplar
   await loadGroups();
 }
 
@@ -1023,8 +1028,12 @@ function save(){
 // ── Grup işlemleri ────────────────────────────────────
 
 async function loadGroups(){
+  // Once localStorage'dan yükle
+  try{const lg=localStorage.getItem('cm6_groups');if(lg){S.groups=JSON.parse(lg);renderGroups&&renderGroups();}}
+  catch(e){}
+  // Sunucudan güncelle
   const groups=await apiFetch('/api/groups');
-  if(groups){S.groups=groups;renderGroups&&renderGroups();}
+  if(groups){S.groups=groups;localStorage.setItem('cm6_groups',JSON.stringify(groups));renderGroups&&renderGroups();}
 }
 
 // Sunucuda grup oluştur — createGroup() içinden çağrılır
@@ -1429,1014 +1438,441 @@ function addSoz(){
   if(!txt){toast('Söz giriniz.',false);return;}
   S.sozler.push({text:txt,src:src||'Kişisel Not'});
   document.getElementById('soz-txt').value='';document.getElementById('soz-src').value='';
-  save();renderSozler();toast('Söz eklendi! 📖');
+  save();renderSozler();toast('Söz eklendi ✓');
 }
-function delSoz(i){S.sozler.splice(i,1);save();renderSozler();toast('Silindi.');}
+function delSoz(i){
+  S.sozler.splice(i,1);save();renderSozler();toast('Silindi');
+}
 
 // ═══════════════════════════════════════════
-// GROUPS
+// GROUPS UI
 // ═══════════════════════════════════════════
-const avC=n=>{let s=0;for(const c of n)s+=c.charCodeAt(0);return AVC[s%AVC.length];};
-const initials=n=>(n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
 function renderGroups(){
-  const el=document.getElementById('grp-list');if(!el)return;
-  el.innerHTML='';
+  const el=document.getElementById('groups-list');if(!el)return;el.innerHTML='';
+  if(!S.groups||!S.groups.length){el.innerHTML='<div style="text-align:center;padding:28px 0;color:var(--t3);font-size:12px;font-weight:700">Henüz grubunuz yok.<br>Yeni bir grup oluşturun!</div>';return;}
   S.groups.forEach(g=>{
-    const kd=g.members.filter(m=>m.done[curVakit()]);
-    const lastMsg=g.chat.filter(m=>m.type==='msg'||m.type==='pray').slice(-1)[0];
-    const unread=g._lastRead?g.chat.filter((m,i)=>i>=(g._lastReadIdx||0)&&(m.type==='msg'||m.type==='pray')&&!m.mine).length:0;
-    const card=document.createElement('div');card.className='grp-card';
-    card.innerHTML=`
-      <div class="grp-emo">${g.emoji}</div>
-      <div class="grp-info">
-        <div class="grp-name">${g.name}</div>
-        <div class="grp-sub">${lastMsg?(lastMsg.type==='pray'?'🕌 '+lastMsg.sender+' namaz kıldı':lastMsg.sender+': '+lastMsg.txt.slice(0,28)+(lastMsg.txt.length>28?'…':'')):g.members.length+' üye'}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-        <span class="bdg g" style="font-size:9px">${kd.length}/${g.members.length}</span>
-        ${unread>0?`<span style="background:var(--green2);color:#fff;font-size:10px;font-weight:900;border-radius:99px;padding:1px 7px;min-width:18px;text-align:center">${unread}</span>`:''}
-      </div>`;
-    card.onclick=()=>openGroup(g.id);
-    const actWrap=document.createElement('div');actWrap.className='grp-act-wrap';
-    actWrap.innerHTML=`<button onclick="event.stopPropagation();quickEditGroup('${g.id}')"><i class="fa-solid fa-pen"></i></button><button onclick="event.stopPropagation();quickDeleteGroup('${g.id}')"><i class="fa-solid fa-trash"></i></button>`;
-    card.appendChild(actWrap);el.appendChild(card);
+    const total=g.members?.length||0;
+    const done=g.members?.filter(m=>m.done).length||0;
+    const pct=total?Math.round(done/total*100):0;
+    const c=document.createElement('div');c.className='grp-card';
+    c.innerHTML=`<div class="gc-row"><div class="gc-emo" style="background:rgba(61,220,132,.1)">${g.emoji||'🕌'}</div><div class="gc-info"><div class="gc-name">${g.name}</div><div class="gc-meta">${total} üye · Kod: ${g.inviteCode||''}</div></div></div><div class="gc-prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div><div class="prog-labels"><span>${done}/${total} kıldı</span><span class="cnt">%${pct}</span></div></div>`;
+    c.onclick=()=>openGroup(g.id);
+    el.appendChild(c);
   });
 }
-function openGroup(id){
-  const g=S.groups.find(x=>x.id===id);if(!g)return;S.curGroup=id;
-  const ac=avC(g.name);
-  document.getElementById('gd-emo').style.cssText=`background:${ac.bg};color:${ac.cl};font-size:26px;`;
-  document.getElementById('gd-emo').textContent=g.emoji;
-  document.getElementById('gd-title').textContent=g.name;
-  document.getElementById('gd-sub').textContent=g.members.length+' üye';
-  showPage('pg-group');
-  document.querySelectorAll('.gtab-body').forEach(t=>t.classList.remove('show'));
-  document.getElementById('gtab-gnamaz').classList.add('show');
-  document.querySelectorAll('.gtab').forEach(b=>b.classList.remove('act'));
-  document.querySelectorAll('.gtab')[0].classList.add('act');
-  renderNamazTab(g);
-}
-function renderNamazTab(g){
-  const cv=curVakit();const me=g.members.find(m=>m.isMe);const done=me&&me.done[cv];
-  const btn=document.getElementById('big-kil-btn');
-  document.getElementById('big-kil-txt').textContent=(PL[cv]||'NAMAZ')+' NAMAZINI KILDIM';
-  btn.className='big-kil-btn'+(done?' done':'');
-  if(done)document.getElementById('big-kil-txt').textContent='✓ '+PL[cv]+' Namazını Kıldın';
-  const kildi=g.members.filter(m=>m.done[cv]);
-  document.getElementById('grp-cnt').textContent=kildi.length+'/'+g.members.length+' kıldı';
-  const sl=document.getElementById('mem-status-list');sl.innerHTML='';
-  [...g.members].sort((a,b)=>(b.done[cv]?1:0)-(a.done[cv]?1:0)).forEach(m=>{
-    const ac=avC(m.name),kd=m.done[cv];
-    const item=document.createElement('div');item.className='mem-item'+(kd?' kdi':' wait');
-    const dmBtn=!m.isMe?`<button class="dm-btn" onclick="dmUser('${m.name}')"><i class="fa-solid fa-comment"></i> Mesaj</button>`:'';
-    item.innerHTML=`<div class="mem-left"><div class="mem-av" style="background:${ac.bg};color:${ac.cl}">${initials(m.name)}</div><div><div class="mem-name">${m.name}${m.isMe?' <span style="font-size:9px;background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:99px;font-weight:800">Ben</span>':''}</div><div class="mem-sub ${kd?'g':'a'}">${kd?(m.kildiAt||'Kıldı'):'Henüz kılmadı...'}</div>${dmBtn}</div></div><span class="bdg ${kd?'g':'a'}"><i class="fa-solid ${kd?'fa-check':'fa-hourglass-half'}" style="font-size:9px"></i> ${kd?'Kıldı':'Bekliyor'}</span>`;
-    sl.appendChild(item);
-  });
-}
-function handleGroupKil(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const cv=curVakit();const me=g.members.find(m=>m.isMe);
-  if(!me||me.done[cv]){toast('Bu vakti zaten kıldın! ✅');return;}
-  me.done[cv]=true;me.kildiAt=nowTime()+' kıldı';
-  // Gruba zengin namaz bildirimi gönder
-  g.chat.push({
-    type:'pray',
-    sender:S.name||me.name,
-    vakit:PL[cv]||cv,
-    time:nowTime(),
-    msg:_prayMsg(PL[cv]||cv)
-  });
-  S.done[cv]=true;save();confetti();showKilModal(cv);renderNamazTab(g);renderDots();renderList();renderGroups();
-  // Eğer chat açıksa yenile
-  if(document.getElementById('gtab-gchat').classList.contains('show'))renderChat();
-  // Diğer üyelerden otomatik tebrik
-  _autoReplyPray(g,cv);
-}
-
-const _prayMsgs={
-  'Sabah':['🌅 Günün ilk ibadetini tamamladı! Hayırlı sabahlar.','🌄 Sabah namazıyla gündüze başladı. MaşAllah!','⭐ Fecrin bereketini yaşadı. Allah kabul etsin.'],
-  'Öğle':['☀️ Öğle vakti Rabbine yöneldi.','🕐 Gün ortasında namazını kıldı. Hayırlı olsun!','✨ Öğle namazını eda etti. Allah kabul etsin.'],
-  'İkindi':['🌤️ İkindi namazını kıldı. Hayırlı ikindiler!','🌻 İkindi vaktini ihya etti. Barakallah!','🙏 Günün ortasında ibadetini tamamladı.'],
-  'Akşam':['🌆 Akşam namazını kıldı. Hayırlı akşamlar!','🌇 Gün batımında Rabbine yöneldi. MaşAllah.','🌅 Akşam vakti namazını eda etti.'],
-  'Yatsı':['🌙 Yatsı namazını kıldı. Hayırlı geceler!','⭐ Gecenin ilk ibadetini tamamladı.','🌟 Yatsı vaktini ihya etti. Allah kabul etsin.'],
-};
-function _prayMsg(vakit){
-  const arr=_prayMsgs[vakit]||['🕌 Namazını kıldı. Allah kabul etsin!'];
-  return arr[Math.floor(Math.random()*arr.length)];
-}
-function _autoReplyPray(g,cv){
-  const replies=['Allah kabul etsin 🤲','MaşAllah! 🕌','Barakallahufik! ✨','Hayırlı olsun 🌙','Âmin! Allah razı olsun 🙏','Tebrikler, Allah kabul etsin 💚','İnşallah hep böyle devam 🌅'];
-  const others=g.members.filter(m=>!m.isMe);
-  others.forEach((o,i)=>{
-    if(Math.random()<0.7){
-      setTimeout(()=>{
-        g.chat.push({type:'msg',sender:o.name,mine:false,txt:replies[Math.floor(Math.random()*replies.length)],time:nowTime(),reactions:[]});
-        save();
-        if(document.getElementById('gtab-gchat').classList.contains('show'))renderChat();
-      },1200+(i*800)+Math.random()*1000);
-    }
-  });
-}
-
-function renderChat(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const el=document.getElementById('chat-msgs');el.innerHTML='';
-  g.chat.forEach((m,idx)=>{
-    // Namaz bildirimi
-    if(m.type==='pray'){
-      const d=document.createElement('div');d.className='chat-pray-ev';
-      d.innerHTML=`<div class="chat-pray-ico">🕌</div><div class="chat-pray-info"><div class="chat-pray-name">${m.sender} · ${m.vakit} Namazı</div><div class="chat-pray-txt">${m.msg}</div><div class="chat-pray-time">${m.time}</div></div><span style="font-size:20px">✅</span>`;
-      el.appendChild(d);return;
-    }
-    // Sistem olayı
-    if(m.type==='event'){
-      const d=document.createElement('div');d.className='chat-ev';d.textContent=m.txt;el.appendChild(d);return;
-    }
-    // Normal mesaj
-    const wrap=document.createElement('div');wrap.className='msg'+(m.mine?' me':'');
-    const ac=avC(m.sender||'X');
-    const reacts=m.reactions||[];
-    const reactHtml=reacts.length?`<div class="msg-reactions">${reacts.map((r,ri)=>`<button class="msg-react${r.mine?' mine':''}" onclick="toggleReact(${idx},${ri})">${r.emoji} <span class="msg-react-cnt">${r.count}</span></button>`).join('')}</div>`:'';
-    wrap.innerHTML=
-      (!m.mine?`<div class="msg-av" style="background:${ac.bg};color:${ac.cl};cursor:pointer" onclick="dmUser('${m.sender}')">${initials(m.sender)}</div>`:'')+
-      `<div><div class="bubble">
-        ${!m.mine?`<div class="msg-sender" style="color:${ac.cl}">${m.sender}</div>`:''}
-        <div class="msg-text">${escHtml(m.txt)}</div>
-        ${reactHtml}
-        <div class="msg-time">${m.time} <button onclick="addReact(${idx})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;padding:0 2px;margin-left:4px">😊</button></div>
-      </div></div>`+
-      (m.mine?`<div class="msg-av" style="background:rgba(61,220,132,.15);color:var(--green)">${initials(S.name||'B')}</div>`:'');
-    el.appendChild(wrap);
-  });
-  el.scrollTop=el.scrollHeight;
-}
-
-function escHtml(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-async function sendMsg(){
-  const inp=document.getElementById('chat-inp');
-  const txt=inp.value.trim();if(!txt)return;
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g){toast('Grup bulunamadı.',false);return;}
-  // Anlık göster (optimistic UI)
-  const uid=getUID();
-  const tmpMsg={type:'msg',sender:S.name||'Ben',userId:uid,mine:true,txt,time:nowTime(),reactions:[]};
-  if(!g.chat)g.chat=[];
-  g.chat.push(tmpMsg);
-  inp.value='';renderChat();
-  setTimeout(()=>{const el=document.getElementById('chat-msgs');if(el)el.scrollTop=99999;},50);
-  // Sunucuya gönder
-  const serverMsg=await _sendMsgServer(S.curGroup,txt);
-  if(!serverMsg){toast('Mesaj gönderilemedi. Çevrimdışı olabilirsiniz.',false);}
-  // 3sn sonra sunucudan güncel listeyi çek
-  clearTimeout(_chatRefreshTimer);
-  _chatRefreshTimer=setTimeout(()=>refreshChat(S.curGroup),3000);
-}
-
-function quickEmoji(e){
-  const inp=document.getElementById('chat-inp');
-  inp.value+=e;inp.focus();
-}
-function toggleQuickEmoji(){
-  document.getElementById('quick-emojis').classList.toggle('show');
-}
-
-// Birinin avatarına tıklayınca sohbet kutusuna @mention yaz
-function dmUser(name){
-  const inp=document.getElementById('chat-inp');
-  inp.value='@'+name+' ';inp.focus();
-  // Chat sekmesine geç
-  const chatTab=document.querySelector('.gtab:nth-child(2)');
-  if(chatTab)showGTab('gchat',chatTab);
-}
-
-const _reactEmojis=['❤️','😂','😮','😢','👍','🤲','🕌','✅'];
-function addReact(msgIdx){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g||!g.chat[msgIdx])return;
-  const msg=g.chat[msgIdx];
-  // Mini seçici göster — basit prompt
-  const e=_reactEmojis[Math.floor(Math.random()*4)]; // Basitçe random seç
-  _doReact(g,msg,e);
-}
-function toggleReact(msgIdx,reactIdx){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g||!g.chat[msgIdx])return;
-  const r=g.chat[msgIdx].reactions[reactIdx];if(!r)return;
-  if(r.mine){r.count--;r.mine=false;if(r.count<=0)g.chat[msgIdx].reactions.splice(reactIdx,1);}
-  else{r.count++;r.mine=true;}
-  save();renderChat();
-}
-function _doReact(g,msg,emoji){
-  if(!msg.reactions)msg.reactions=[];
-  const ex=msg.reactions.find(r=>r.emoji===emoji);
-  if(ex){if(!ex.mine){ex.count++;ex.mine=true;}}
-  else{msg.reactions.push({emoji,count:1,mine:true});}
-  save();renderChat();
-}
-function chatKey(e){if(e.key==='Enter')sendMsg();}
-function renderStats(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const me=g.members.find(m=>m.isMe);
-  const mc=me?Object.values(me.done).filter(Boolean).length:0;
-  const td=g.members.reduce((s,m)=>s+Object.values(m.done).filter(Boolean).length,0);
-  const avg=g.members.length?Math.round(td/(g.members.length*5)*100):0;
-  document.getElementById('stat-grid').innerHTML=`<div class="stat-card"><div class="stat-val">${mc}/5</div><div class="stat-lbl">Bugün Kıldığın</div></div><div class="stat-card"><div class="stat-val">${avg}%</div><div class="stat-lbl">Grup Ortalaması</div></div><div class="stat-card"><div class="stat-val">${g.members.length}</div><div class="stat-lbl">Toplam Üye</div></div><div class="stat-card"><div class="stat-val" style="color:var(--gold)">🔥${mc>=4?5:mc>=2?3:1}</div><div class="stat-lbl">Günlük Seri</div></div>`;
-  const wd=[3,4,5,4,3,2,mc];const days=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
-  const bw=document.getElementById('bars-wrap'),bd=document.getElementById('bars-days');bw.innerHTML='';bd.innerHTML='';
-  wd.forEach((v,i)=>{const bc=document.createElement('div');bc.className='bar-col';bc.innerHTML=`<div class="bar${i===6?' today':''}" style="height:${Math.round(v/5*62)}px"></div>`;bw.appendChild(bc);const dc=document.createElement('div');dc.className='bar-col';dc.innerHTML=`<div class="bar-day" style="${i===6?'color:var(--gold);font-weight:900':''}">${days[i]}</div>`;bd.appendChild(dc);});
-}
-function renderFullMem(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const el=document.getElementById('full-mem-list');el.innerHTML='';
-  g.members.forEach((m,idx)=>{
-    const ac=avC(m.name);const cnt=Object.values(m.done).filter(Boolean).length;
-    const item=document.createElement('div');item.className='mem-item';
-    item.style.cssText='gap:8px;';
-    item.innerHTML=`
-      <div class="mem-left" style="flex:1;min-width:0">
-        <div class="mem-av" style="background:${ac.bg};color:${ac.cl}">${initials(m.name)}</div>
-        <div style="min-width:0">
-          <div class="mem-name">${m.name}${m.isMe?' <span style="font-size:9px;background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:99px;font-weight:800">Ben</span>':''}</div>
-          <div class="mem-sub">Bugün ${cnt}/5 vakit</div>
-        </div>
-      </div>
-      <span class="bdg ${cnt>=4?'g':'a'}" style="margin-right:2px">${cnt}/5</span>
-      ${!m.isMe?`
-        <button onclick="editMember(${idx})" style="width:30px;height:30px;border-radius:8px;background:rgba(232,197,71,.1);border:1px solid rgba(232,197,71,.25);color:var(--gold);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-pen"></i></button>
-        <button onclick="deleteMember(${idx})" style="width:30px;height:30px;border-radius:8px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);color:var(--red);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-trash"></i></button>
-      `:'<div style="width:68px"></div>'}
-    `;
-    el.appendChild(item);
-  });
-}
-function openCreateGroup(){
-  document.getElementById('cg-name').value='';
-  selEmoVal='🕌';
-  document.querySelectorAll('.emoji-opt').forEach((b,i)=>b.classList.toggle('sel',i===0));
-  // Ensure button is in create mode
-  const btn=document.querySelector('#cg-modal .btn-green.full');
-  if(btn){btn.innerHTML='<i class="fa-solid fa-check"></i> Grubu Oluştur';btn.onclick=createGroup;}
-  openModal('cg-modal');
-}
-function selEmo(btn,e){document.querySelectorAll('.emoji-opt').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selEmoVal=e;}
-
-function genCode(){
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let c='';for(let i=0;i<6;i++)c+=chars[Math.floor(Math.random()*chars.length)];
-  // Mevcut kodlarla çakışıyor mu?
-  if(S.groups.find(g=>g.inviteCode===c))return genCode();
-  return c;
-}
-
+function openCreateGroup(){openModal('cg-modal');document.getElementById('cg-name').value='';}
 async function createGroup(){
   const name=document.getElementById('cg-name').value.trim();
   if(!name){toast('Grup adı girin.',false);return;}
-  closeModal('cg-modal');
-  toast('Grup oluşturuluyor...');
-  const g=await _serverCreateGroup(name,selEmoVal);
-  if(!g){toast('Grup oluşturulamadı. Sunucuya bağlanılamıyor.',false);return;}
-  confetti();
-  toast('"'+name+'" oluşturuldu! 🎉');
-  setTimeout(()=>openGroup(g.id),300);
-}
-function openAddMember(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  // Grup bilgisini göster
-  const el=document.getElementById('inv-grp-info');
-  if(el)el.innerHTML=`<span style="font-size:20px">${g.emoji}</span> <span>${g.name} · ${g.members.length} üye</span>`;
-  // Davet panelini aç
-  switchInvTab('send',document.getElementById('itab-send'));
-  document.getElementById('addmem-inp').value='';
-  openModal('addmem-modal');
-  // QR ve kodu üret
-  generateInviteAssets(g);
-}
-
-function generateInviteAssets(g){
-  // Grup verisini JSON → UTF-8 safe base64
-  const payload=JSON.stringify({v:1,id:g.id,name:g.name,emoji:g.emoji,code:g.inviteCode});
-  let encoded;
-  try{encoded=btoa(unescape(encodeURIComponent(payload)));}
-  catch(e){encoded=btoa(payload);}
-
-  // QR kutuyu temizle ve yeni oluştur
-  const qrDiv=document.getElementById('qr-canvas');
-  qrDiv.innerHTML='';
-  try{
-    new QRCode(qrDiv,{
-      text:encoded,
-      width:180,height:180,
-      colorDark:'#07130d',colorLight:'#ffffff',
-      correctLevel:QRCode.CorrectLevel.M
-    });
-  }catch(e){
-    qrDiv.innerHTML='<div style="font-size:11px;color:#888;text-align:center;padding:20px">QR kütüphanesi yükleniyor...</div>';
+  let g=await _serverCreateGroup(name,selEmoVal);
+  if(!g){
+    g={id:'local_'+Date.now(),name,emoji:selEmoVal||'🕌',inviteCode:Math.random().toString(36).slice(2,8).toUpperCase(),members:[{userId:getUID(),name:S.name||'Ben',done:false}],chat:[]};
+    S.groups.push(g);
+    try{localStorage.setItem('cm6_groups',JSON.stringify(S.groups));}catch(e){}
   }
-
-  // Davet kodunu göster
-  const codeEl=document.getElementById('inv-code-display');
-  if(codeEl)codeEl.textContent=g.inviteCode||'——';
+  closeModal('cg-modal');renderGroups();toast('Grup oluşturuldu ✓');
+}
+function selEmo(btn,emo){
+  document.querySelectorAll('.emoji-opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');selEmoVal=emo;
+}
+function openGroup(id){
+  const g=S.groups.find(x=>x.id===id);if(!g)return;
+  S.curGroup=id;
+  document.getElementById('gd-emo').textContent=g.emoji||'🕌';
+  document.getElementById('gd-title').textContent=g.name;
+  document.getElementById('gd-sub').textContent=(g.members?.length||0)+' üye';
+  showPage('pg-group');
+  showGTab('gnamaz',document.querySelector('.gtab'));
+  renderMemberStatus();
+  // Otomatik yenile
+  clearInterval(_chatRefreshTimer);
+  _chatRefreshTimer=setInterval(()=>{if(S.curGroup)refreshChat(S.curGroup);},8000);
+}
+function renderMemberStatus(){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  const el=document.getElementById('mem-status-list');if(!el)return;el.innerHTML='';
+  const myId=getUID();
+  const me=g.members?.find(m=>m.userId===myId);
+  const btn=document.getElementById('big-kil-btn');
+  const txt=document.getElementById('big-kil-txt');
+  if(btn&&txt){
+    const vk=curVakit();const vkL=PL[vk]||'';
+    if(me?.done){btn.className='big-kil-btn done';txt.textContent=vkL+' Namazını Kıldınız ✓';}
+    else{btn.className='big-kil-btn';txt.textContent=vkL+' NAMAZINI KILDIM';}
+  }
+  const cnt=document.getElementById('grp-cnt');
+  const doneC=g.members?.filter(m=>m.done).length||0;
+  if(cnt)cnt.textContent=doneC+'/'+(g.members?.length||0)+' kıldı';
+  (g.members||[]).forEach(m=>{
+    const isDone=!!m.done,isMe=m.userId===myId;
+    const c=document.createElement('div');c.className='mem-item'+(isDone?' kdi':' wait');
+    const av=AVC[Math.abs(m.name?.charCodeAt(0)||0)%AVC.length]||AVC[0];
+    c.innerHTML=`<div class="mem-left"><div class="mem-av" style="background:${av.bg};color:${av.cl}">${(m.name||'?')[0].toUpperCase()}</div><div><div class="mem-name">${m.name||'İsimsiz'}${isMe?' (Sen)':''}</div><div class="mem-sub ${isDone?'g':'a'}">${isDone?'✓ Kıldı':'⏳ Bekliyor'}</div></div></div><div class="bdg ${isDone?'g':'a'}">${isDone?'<i class="fa-solid fa-check"></i> Kıldı':'<i class="fa-solid fa-clock"></i> Bekliyor'}</div>`;
+    el.appendChild(c);
+  });
+}
+async function handleGroupKil(){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  const me=g.members?.find(m=>m.userId===getUID());
+  if(me?.done)return;
+  const vk=curVakit();
+  handleKil(vk,true);
+  await updateMemberDone(S.curGroup,true,nowTime());
+  renderMemberStatus();
+  sendPrayerEvent(S.curGroup,vk);
+}
+function renderFullMem(){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  const el=document.getElementById('full-mem-list');if(!el)return;el.innerHTML='';
+  (g.members||[]).forEach(m=>{
+    const av=AVC[Math.abs(m.name?.charCodeAt(0)||0)%AVC.length]||AVC[0];
+    const c=document.createElement('div');c.className='mem-item';
+    c.innerHTML=`<div class="mem-left"><div class="mem-av" style="background:${av.bg};color:${av.cl}">${(m.name||'?')[0].toUpperCase()}</div><div><div class="mem-name">${m.name||'İsimsiz'}</div><div class="mem-sub">Üye</div></div></div>`;
+    el.appendChild(c);
+  });
+}
+function renderStats(){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  const sg=document.getElementById('stat-grid');if(!sg)return;sg.innerHTML='';
+  const total=g.members?.length||0,done=g.members?.filter(m=>m.done).length||0;
+  const stats=[{v:total,l:'Toplam Üye'},{v:done,l:'Kıldı'},{v:total-done,l:'Bekliyor'},{v:total?Math.round(done/total*100)+'%':'0%',l:'Tamamlama'}];
+  stats.forEach(s=>{const c=document.createElement('div');c.className='stat-card';c.innerHTML=`<div class="stat-val">${s.v}</div><div class="stat-lbl">${s.l}</div>`;sg.appendChild(c);});
+  const bw=document.getElementById('bars-wrap'),bd=document.getElementById('bars-days');
+  if(bw){bw.innerHTML='';const days=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];const vals=[3,4,5,4,5,3,done];const mx=Math.max(...vals,1);days.forEach((d,i)=>{const col=document.createElement('div');col.className='bar-col';const h=Math.round(vals[i]/mx*60);col.innerHTML=`<div class="bar${i===6?' today':''}" style="height:${h}px"></div>`;bw.appendChild(col);});}
+  if(bd){bd.innerHTML='';['Pzt','Sal','Çar','Per','Cum','Cmt','Bug'].forEach(d=>{const s=document.createElement('div');s.className='bar-day';s.textContent=d;bd.appendChild(s);});}
+}
+function openEditGroup(){toast('Düzenleme yakında!');}
+function confirmDeleteGroup(){
+  if(!confirm('Grubu silmek istediğinizden emin misiniz?'))return;
+  leaveGroup(S.curGroup);backToMain();toast('Grup silindi.');
+}
+function copyInvite(){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  navigator.clipboard?.writeText(g.inviteCode||'').then(()=>toast('Kod kopyalandı!')).catch(()=>toast('Kopyalanamadı.',false));
 }
 
-function switchInvTab(tab,btn){
+// ═══════════════════════════════════════════
+// INVITE MODAL
+// ═══════════════════════════════════════════
+let _qrStream=null,_qrScanInt=null;
+function openAddMember(){
+  const g=S.groups.find(x=>x.id===S.curGroup);
+  if(!g){toast('Önce bir grup seçin.',false);return;}
+  document.getElementById('inv-grp-info').textContent='📌 '+g.name+' · Kod: '+(g.inviteCode||'');
+  document.getElementById('inv-code-display').textContent=g.inviteCode||'——';
+  const qc=document.getElementById('qr-canvas');if(qc){qc.innerHTML='';try{new QRCode(qc,{text:'cemaatim:join:'+g.inviteCode,width:160,height:160,colorDark:'#000',colorLight:'#fff'});}catch(e){}}
+  openModal('addmem-modal');switchInvTab('send',document.getElementById('itab-send'));
+}
+function switchInvTab(name,btn){
   document.querySelectorAll('.inv-tab').forEach(b=>b.classList.remove('act'));
   if(btn)btn.classList.add('act');
-  document.getElementById('inv-panel-send').style.display=tab==='send'?'':'none';
-  document.getElementById('inv-panel-join').style.display=tab==='join'?'':'none';
-  if(tab==='join'){stopQRScan();document.getElementById('join-code-inp').value='';}
+  document.getElementById('inv-panel-send').style.display=name==='send'?'':'none';
+  document.getElementById('inv-panel-join').style.display=name==='join'?'':'none';
 }
-
 function copyInviteCode(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const code=g.inviteCode||'——';
-  if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>toast('Davet kodu kopyalandı: '+code+' 🔑'));}
-  else{toast('Davet kodu: '+code);}
+  navigator.clipboard?.writeText(g.inviteCode||'').then(()=>toast('Kod kopyalandı ✓')).catch(()=>toast('Kopyalanamadı.',false));
 }
-
-function copyInvite(){
-  // Grup detay sayfasındaki davet butonu
-  openAddMember();
-}
-
 function shareInvite(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const code=g.inviteCode;
-  const msg=`🕌 "${g.name}" namaz grubuna katılmak ister misin?\n\n📲 Davet Kodu: *${code}*\n\nNasıl katılırsın:\n1. Uygulamayı aç\n2. Gruplar → Gruba Katıl\n3. Kodu gir: ${code}`;
-
-  // 1. Web Share API (HTTPS veya destekleyen tarayıcı)
-  if(navigator.share&&navigator.canShare&&navigator.canShare({text:msg})){
-    navigator.share({title:g.name+' — Namaz Grubu',text:msg})
-      .then(()=>toast('Paylaşıldı! 🎉'))
-      .catch(err=>{if(err.name!=='AbortError')_fallbackShare(msg,code);});
-    return;
-  }
-  if(navigator.share){
-    navigator.share({title:g.name+' — Namaz Grubu',text:msg})
-      .then(()=>toast('Paylaşıldı! 🎉'))
-      .catch(err=>{if(err.name!=='AbortError')_fallbackShare(msg,code);});
-    return;
-  }
-  // 2. Fallback
-  _fallbackShare(msg,code);
+  const txt=`Cemaatim uygulamasına ${g.name} grubuna katılmak için davet kodum: ${g.inviteCode}`;
+  if(navigator.share){navigator.share({text:txt}).catch(()=>{});}
+  else{window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');}
 }
-
-function _fallbackShare(msg,code){
-  // WhatsApp direkt link
-  const waUrl='https://wa.me/?text='+encodeURIComponent(msg);
-  // Clipboard + WhatsApp aç
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(msg).then(()=>{
-      toast('Mesaj kopyalandı! WhatsApp açılıyor... 📋');
-      setTimeout(()=>window.open(waUrl,'_blank'),600);
-    }).catch(()=>{
-      window.open(waUrl,'_blank');
-    });
-  } else {
-    // Son çare: prompt içinde göster
-    window.open(waUrl,'_blank');
-    toast('Davet kodu: '+code+' (kopyalayın)');
-  }
-}
-
 function downloadQR(){
-  const canvas=document.querySelector('#qr-canvas canvas');
-  if(!canvas){toast('QR henüz hazır değil.',false);return;}
-  const g=S.groups.find(x=>x.id===S.curGroup);
-  const link=document.createElement('a');
-  link.download=(g?g.name:'grup')+'_davet_qr.png';
-  link.href=canvas.toDataURL('image/png');
-  link.click();
-  toast('QR kodu indirildi! 🖼️');
+  const qc=document.getElementById('qr-canvas');
+  const img=qc?.querySelector('img')||qc?.querySelector('canvas');
+  if(!img){toast('QR oluşturulmadı.',false);return;}
+  const a=document.createElement('a');
+  a.href=img.tagName==='IMG'?img.src:img.toDataURL();
+  a.download='cemaatim-davet.png';a.click();toast('QR indirildi ✓');
 }
-
-// ── Koda ile katıl ──────────────────────────
-async function joinByCode(){
-  const code=document.getElementById('join-code-inp').value.trim().toUpperCase();
-  if(code.length!==6){toast('6 haneli kodu eksiksiz gir.',false);return;}
-  // Zaten üye mi?
-  const existing=S.groups.find(x=>x.inviteCode===code);
-  if(existing){toast('"'+existing.name+'" grubuna zaten üyesin!',false);return;}
-  // Sunucuda bul & katıl
-  const res=await _serverJoinGroup(code);
-  if(!res){toast('Grup bulunamadı. Kod yanlış ya da sunucuya ulaşılamıyor.',false);return;}
-  closeModal('addmem-modal');
-  renderGroups();confetti();
-  const name=res.group?.name||'Grup';
-  toast('"'+name+'" grubuna katıldın! 🎉');
-  setTimeout(()=>res.group&&openGroup(res.group.id),400);
-}
-
-// ── QR Kamera Tarayıcı ──────────────────────
-let qrStream=null,qrInterval=null;
-
-function startQRScan(){
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    toast('Bu tarayıcıda kamera desteklenmiyor.',false);return;
-  }
-  const wrap=document.getElementById('qr-reader-wrap');
-  const btn=document.getElementById('qr-scan-btn');
-  const lbl=document.getElementById('qr-scan-lbl');
-  wrap.style.display='';btn.style.display='none';
-  if(lbl)lbl.textContent='Kamerayı QR koda doğrult...';
-
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}})
-    .then(stream=>{
-      qrStream=stream;
-      const video=document.getElementById('qr-video');
-      video.srcObject=stream;
-      video.onloadedmetadata=()=>video.play().catch(()=>{});
-
-      if(typeof jsQR!=='undefined'){
-        const canvas=document.createElement('canvas');
-        const ctx2=canvas.getContext('2d',{willReadFrequently:true});
-        qrInterval=setInterval(()=>{
-          if(video.readyState>=2&&video.videoWidth>0){
-            canvas.width=video.videoWidth;
-            canvas.height=video.videoHeight;
-            ctx2.drawImage(video,0,0,canvas.width,canvas.height);
-            const imgData=ctx2.getImageData(0,0,canvas.width,canvas.height);
-            const result=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'dontInvert'});
-            if(result&&result.data){
-              handleQRResult(result.data);
-              stopQRScan();
-            }
-          }
-        },200);
-        if(lbl)lbl.textContent='Kamerayı QR koda doğrult... 🔍';
-      } else {
-        if(lbl)lbl.textContent='⚠️ QR okuyucu yüklenemedi. Kod ile katılın.';
-      }
-    })
-    .catch(err=>{
-      toast('Kamera izni gerekli veya başka uygulama kullanıyor.',false);
-      stopQRScan();
-    });
-}
-
-function stopQRScan(){
-  if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null;}
-  if(qrInterval){clearInterval(qrInterval);qrInterval=null;}
-  const wrap=document.getElementById('qr-reader-wrap');
-  const btn=document.getElementById('qr-scan-btn');
-  if(wrap)wrap.style.display='none';
-  if(btn)btn.style.display='';
-}
-
-function handleQRResult(data){
-  try{
-    let jsonStr;
-    try{jsonStr=decodeURIComponent(escape(atob(data)));}
-    catch(e){jsonStr=atob(data);}
-    const payload=JSON.parse(jsonStr);
-    if(!payload.v||!payload.name){toast('Geçersiz QR kod.',false);return;}
-    const exists=S.groups.find(x=>x.id===payload.id||x.inviteCode===payload.code);
-    if(exists){toast('"'+exists.name+'" grubuna zaten üyesin!',false);return;}
-    const newG={
-      id:payload.id||('g'+Date.now()),
-      name:payload.name,
-      emoji:payload.emoji||'🕌',
-      inviteCode:payload.code||genCode(),
-      members:[{name:S.name||'Ben',done:{},isMe:true,kildiAt:''}],
-      chat:[{type:'event',txt:`👤 ${S.name||'Ben'} QR ile gruba katıldı!`,time:nowTime()}],
-      _dd:tkey()
-    };
-    PK.forEach(k=>newG.members[0].done[k]=false);
-    S.groups.push(newG);save();
-    closeModal('addmem-modal');renderGroups();confetti();
-    toast('"'+newG.name+'" grubuna katıldın! 🎉');
-  }catch(e){toast('QR kod okunamadı: '+e.message,false);}
-}
-
-function addMember(){
-  const name=document.getElementById('addmem-inp').value.trim();
-  if(!name){toast('İsim girin.',false);return;}
+async function addMember(){
+  const name=document.getElementById('addmem-inp')?.value.trim();
+  if(!name){toast('Üye adı girin.',false);return;}
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  if(g.members.find(m=>m.name.toLowerCase()===name.toLowerCase())){toast('Bu üye zaten grupta!',false);return;}
-  const m={name,done:{},kildiAt:'',isMe:false};PK.forEach(k=>m.done[k]=false);
-  g.members.push(m);
-  g.chat.push({type:'event',txt:`👤 ${name} gruba eklendi!`,time:nowTime()});
-  save();
+  if(!g.members)g.members=[];
+  g.members.push({userId:'local_'+Date.now(),name,done:false});
   document.getElementById('addmem-inp').value='';
-  const gdSub=document.getElementById('gd-sub');
-  if(gdSub)gdSub.textContent=g.members.length+' üye';
-  toast(name+' eklendi! 👤');
-  renderNamazTab(g);
-  renderGroups();
+  renderMemberStatus();renderGroups();
+  toast(name+' eklendi ✓');
 }
-
-// ── Member edit / delete ─────────────────────────────
-function editMember(idx){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const m=g.members[idx];if(!m||m.isMe)return;
-  const newName=prompt('Üye adını düzenle:',m.name);
-  if(!newName||!newName.trim())return;
-  m.name=newName.trim();
-  save();renderFullMem();renderNamazTab(g);renderGroups();
-  toast('Üye güncellendi!');
+async function joinByCode(){
+  const code=document.getElementById('join-code-inp')?.value.trim().toUpperCase();
+  if(!code||code.length<4){toast('Geçerli bir kod girin.',false);return;}
+  const res=await _serverJoinGroup(code);
+  if(res){closeModal('addmem-modal');openGroup(res.group.id);toast('Gruba katıldınız ✓');}
+  else{toast('Grup bulunamadı veya kod hatalı.',false);}
 }
-function deleteMember(idx){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const m=g.members[idx];if(!m||m.isMe){toast('Kendinizi silemezsiniz.',false);return;}
-  if(!confirm(m.name+' üyesini gruptan çıkarmak istediğinize emin misiniz?'))return;
-  g.members.splice(idx,1);
-  g.chat.push({type:'event',txt:`👤 ${m.name} gruptan çıkarıldı.`,time:nowTime()});
-  save();renderFullMem();renderNamazTab(g);
-  document.getElementById('gd-sub').textContent=g.members.length+' üye';
-  toast(m.name+' çıkarıldı.');
+function startQRScan(){
+  const wrap=document.getElementById('qr-reader-wrap');
+  const btn=document.getElementById('qr-scan-btn');
+  if(wrap)wrap.style.display='';
+  if(btn)btn.style.display='none';
+  navigator.mediaDevices?.getUserMedia({video:{facingMode:'environment'}}).then(stream=>{
+    _qrStream=stream;
+    const video=document.getElementById('qr-video');
+    if(video){video.srcObject=stream;video.play();}
+    _qrScanInt=setInterval(()=>{
+      const v=document.getElementById('qr-video');if(!v||v.readyState<2)return;
+      const canvas=document.createElement('canvas');canvas.width=v.videoWidth;canvas.height=v.videoHeight;
+      const ctx=canvas.getContext('2d');ctx.drawImage(v,0,0);
+      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code=jsQR(img.data,img.width,img.height);
+      if(code&&code.data.startsWith('cemaatim:join:')){
+        const inv=code.data.replace('cemaatim:join:','');
+        stopQRScan();
+        document.getElementById('join-code-inp').value=inv;
+        joinByCode();
+      }
+    },300);
+  }).catch(()=>toast('Kamera izni gerekli.',false));
 }
-
-// ── Group edit / delete ──────────────────────────────
-function openEditGroup(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  document.getElementById('cg-name').value=g.name;
-  // pre-select emoji
-  document.querySelectorAll('.emoji-opt').forEach(b=>{
-    b.classList.remove('sel');
-    if(b.textContent===g.emoji)b.classList.add('sel');
-  });
-  selEmoVal=g.emoji;
-  // Change modal button to "Güncelle"
-  const btn=document.querySelector('#cg-modal .btn-green.full');
-  if(btn){btn.textContent='';btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Grubu Güncelle';btn.onclick=saveGroupEdit;}
-  openModal('cg-modal');
+function stopQRScan(){
+  clearInterval(_qrScanInt);
+  if(_qrStream){_qrStream.getTracks().forEach(t=>t.stop());_qrStream=null;}
+  const wrap=document.getElementById('qr-reader-wrap');const btn=document.getElementById('qr-scan-btn');
+  if(wrap)wrap.style.display='none';if(btn)btn.style.display='';
 }
-function saveGroupEdit(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const name=document.getElementById('cg-name').value.trim();
-  if(!name){toast('Grup adı girin.',false);return;}
-  g.name=name;g.emoji=selEmoVal;
-  save();closeModal('cg-modal');
-  // Restore create button
-  const btn=document.querySelector('#cg-modal .btn-green.full');
-  if(btn){btn.innerHTML='<i class="fa-solid fa-check"></i> Grubu Oluştur';btn.onclick=createGroup;}
-  // Update header
-  const ac=avC(g.name);
-  document.getElementById('gd-emo').textContent=g.emoji;
-  document.getElementById('gd-emo').style.cssText=`background:${ac.bg};color:${ac.cl};font-size:26px;`;
-  document.getElementById('gd-title').textContent=g.name;
-  renderGroups();toast('Grup güncellendi!');
-}
-function confirmDeleteGroup(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  if(!confirm('"'+g.name+'" grubunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'))return;
-  S.groups=S.groups.filter(x=>x.id!==S.curGroup);
-  S.curGroup=null;save();backToMain();
-  toast('Grup silindi.');
-}
-
-function quickEditGroup(gid){
-  S.curGroup=gid;openEditGroup();
-}
-function quickDeleteGroup(gid){
-  const g=S.groups.find(x=>x.id===gid);if(!g)return;
-  if(!confirm('"'+g.name+'" grubunu silmek istediğinize emin misiniz?'))return;
-  S.groups=S.groups.filter(x=>x.id!==gid);
-  save();renderGroups();toast('Grup silindi.');
-}
-function renderGroupActions(gid){openGroup(gid);}
 
 // ═══════════════════════════════════════════
-// SES SİSTEMİ
+// CHAT
 // ═══════════════════════════════════════════
-const SOUNDS=[
-  {id:'hicaz',  name:'Hicaz Makamı',   sub:'Klasik ezan makamı', ico:'🕌'},
-  {id:'usshak', name:'Uşşak Makamı',   sub:'Duygusal ve derin',  ico:'🌙'},
-  {id:'rast',   name:'Rast Makamı',    sub:'Huzurlu sabah tonu', ico:'🌅'},
-  {id:'saba',   name:'Saba Makamı',    sub:'Mekke ezanı tonu',   ico:'🕋'},
-  {id:'ney',    name:'Ney Taksimi',    sub:'Tasavvuf / sufi',    ico:'🎵'},
-  {id:'ud',     name:'Ud Teli',        sub:'Telli enstrüman',    ico:'🎸'},
-  {id:'gentle', name:'Yumuşak Çan',    sub:'Hafif hatırlatma',   ico:'🔔'},
-  {id:'silent', name:'Sessiz',         sub:'Yalnız görsel uyarı',ico:'🔕'},
-];
+function renderChat(){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  const el=document.getElementById('chat-msgs');if(!el)return;el.innerHTML='';
+  (g.chat||[]).forEach(m=>{appendMsg(m,false);});
+  el.scrollTop=el.scrollHeight;
+}
+function appendMsg(m,scroll=true){
+  const el=document.getElementById('chat-msgs');if(!el)return;
+  const isMe=m.userId===getUID();
+  if(m.type==='pray'){
+    const ev=document.createElement('div');ev.className='chat-pray-ev';
+    ev.innerHTML=`<div class="chat-pray-ico">${PI[m.vakit]?'':'🕌'}</div><div class="chat-pray-info"><div class="chat-pray-name">${m.name||''} · ${PL[m.vakit]||''} Namazı</div><div class="chat-pray-txt">Namazını kıldı 🤲</div><div class="chat-pray-time">${m.time||''}</div></div>`;
+    el.appendChild(ev);
+  } else {
+    const av=AVC[Math.abs((m.name||'?').charCodeAt(0))%AVC.length]||AVC[0];
+    const div=document.createElement('div');div.className='msg'+(isMe?' me':'');
+    div.innerHTML=`<div class="msg-av" style="background:${av.bg};color:${av.cl}">${(m.name||'?')[0].toUpperCase()}</div><div><div class="bubble"><div class="msg-sender">${m.name||''}</div><div class="msg-text">${m.txt||''}</div></div><div class="msg-time">${m.time||''}</div></div>`;
+    el.appendChild(div);
+  }
+  if(scroll)el.scrollTop=el.scrollHeight;
+}
+async function sendMsg(){
+  const inp=document.getElementById('chat-inp');if(!inp)return;
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';
+  const m={userId:getUID(),name:S.name||'Ben',txt,time:nowTime(),type:'msg'};
+  const g=S.groups.find(x=>x.id===S.curGroup);
+  if(g){if(!g.chat)g.chat=[];g.chat.push(m);}
+  appendMsg(m);
+  await _sendMsgServer(S.curGroup,txt);
+}
+function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function quickEmoji(emo){
+  const inp=document.getElementById('chat-inp');
+  if(inp){inp.value+=emo;inp.focus();}
+}
+function toggleQuickEmoji(){
+  const el=document.getElementById('quick-emojis');
+  if(el)el.classList.toggle('show');
+}
+async function sendPrayerEvent(groupId,vakit){
+  const m={userId:getUID(),name:S.name||'Ben',type:'pray',vakit,time:nowTime()};
+  const g=S.groups.find(x=>x.id===groupId);
+  if(g){if(!g.chat)g.chat=[];g.chat.push(m);}
+  await _sendMsgServer(groupId,'🕌 '+PL[vakit]+' namazını kıldı');
+}
 
-let customAudioUrl=null,customAudioName=null,customAudio=null,previewAudio=null;
+// ═══════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════
+function openModal(id){document.getElementById(id)?.classList.add('open');}
+function closeModal(id){document.getElementById(id)?.classList.remove('open');}
 
-// ── Makam tanımları ────────────────────────
-// Her nota: {f:Hz, d:süre(s), v:vibrato?, g:glide?}
-const MAQAM={
-
-  hicaz:{ // Hicaz — Re Mi♭ Fi# Sol La Si♭ Do Re
-    bpm:52,
-    phrases:[
-      // Cümle 1: yükselen
-      [{f:293.66,d:.55},{f:311.13,d:.3},{f:369.99,d:.65,v:.7},{f:392,d:.45},{f:0,d:.18}],
-      // Cümle 2: orta
-      [{f:440,d:.5},{f:415.3,d:.3},{f:392,d:.6,v:.5},{f:369.99,d:.4},{f:311.13,d:.3},{f:0,d:.2}],
-      // Cümle 3: alçalan karar
-      [{f:369.99,d:.5},{f:349.23,d:.3},{f:311.13,d:.7,v:.8},{f:293.66,d:.9}],
-    ],
-    type:'sine'
-  },
-
-  usshak:{ // Uşşak — Re Mi♭ Fa Sol La Si♭ Do Re  (küçük ikili karakteristik)
-    bpm:46,
-    phrases:[
-      [{f:220,d:.6},{f:246.94,d:.45,v:.4},{f:261.63,d:.55},{f:293.66,d:.7,v:.6},{f:0,d:.22}],
-      [{f:329.63,d:.5},{f:311.13,d:.35},{f:293.66,d:.6,v:.5},{f:261.63,d:.4},{f:0,d:.2}],
-      [{f:246.94,d:.55},{f:220,d:.45,v:.6},{f:196,d:.5},{f:220,d:1.1,v:.9}],
-    ],
-    type:'sine'
-  },
-
-  rast:{ // Rast — Do Re Mi♭ Fa Sol La Si♭ Do (sakin, parlak)
-    bpm:56,
-    phrases:[
-      [{f:261.63,d:.5},{f:293.66,d:.45},{f:329.63,d:.6,v:.4},{f:349.23,d:.5},{f:0,d:.2}],
-      [{f:392,d:.55},{f:440,d:.4,v:.5},{f:392,d:.45},{f:349.23,d:.55},{f:329.63,d:.4},{f:0,d:.18}],
-      [{f:293.66,d:.5},{f:261.63,d:.45,v:.6},{f:246.94,d:.4},{f:261.63,d:1.0,v:.8}],
-    ],
-    type:'sine'
-  },
-
-  saba:{ // Saba — Re Mi♭ Fa♭ Sol La♭ Si♭ Do Re (hüzünlü, otantik)
-    bpm:44,
-    phrases:[
-      [{f:293.66,d:.6},{f:311.13,d:.4},{f:329.63,d:.3},{f:277.18,d:.7,v:.6},{f:0,d:.25}],
-      [{f:293.66,d:.5},{f:349.23,d:.4},{f:392,d:.6,v:.5},{f:369.99,d:.4},{f:349.23,d:.5},{f:0,d:.2}],
-      [{f:329.63,d:.4},{f:311.13,d:.5},{f:293.66,d:.45,v:.7},{f:277.18,d:.4},{f:261.63,d:.4},{f:293.66,d:.9,v:.8}],
-    ],
-    type:'sine'
-  },
-
-  ney:{ // Ney — üfleme, nefes sesi, sufi
-    bpm:38,
-    phrases:[
-      [{f:174.61,d:.8,v:.3},{f:0,d:.12},{f:196,d:.6,v:.4},{f:220,d:.7,v:.5},{f:0,d:.25}],
-      [{f:246.94,d:.7,v:.5},{f:220,d:.55,v:.4},{f:196,d:.75,v:.3},{f:0,d:.3}],
-      [{f:185,d:.6,v:.4},{f:174.61,d:.5,v:.5},{f:164.81,d:.7,v:.3},{f:174.61,d:1.2,v:.6}],
-    ],
-    type:'triangle',breathNoise:true
-  },
-
-  ud:{ // Ud — telli, parmak tırnak sesi (kısa tiz + uzun rezonans)
-    bpm:60,
-    phrases:[
-      [{f:196,d:.12,pluck:true},{f:246.94,d:.12,pluck:true},{f:293.66,d:.2,pluck:true},{f:349.23,d:.35,pluck:true},{f:392,d:.5,pluck:true},{f:0,d:.3}],
-      [{f:440,d:.15,pluck:true},{f:392,d:.12,pluck:true},{f:349.23,d:.2,pluck:true},{f:329.63,d:.35,pluck:true},{f:0,d:.25}],
-      [{f:293.66,d:.15,pluck:true},{f:261.63,d:.12,pluck:true},{f:246.94,d:.5,pluck:true},{f:220,d:.8,pluck:true}],
-    ],
-    type:'sawtooth'
-  },
-
-  gentle:{ // Yumuşak çan / gong
-    bpm:72,
-    phrases:[
-      [{f:528,d:.5,bell:true},{f:0,d:.2},{f:594,d:.45,bell:true},{f:0,d:.18},{f:660,d:.6,bell:true},{f:0,d:.25}],
-      [{f:594,d:.45,bell:true},{f:528,d:.7,bell:true}],
-    ],
-    type:'sine'
-  },
+// ═══════════════════════════════════════════
+// ALARMS
+// ═══════════════════════════════════════════
+let _alarmAudio=null,_customAudioData=null;
+const SOUNDS={
+  hicaz:{name:'Klasik Ezan Melodisi',ico:'🎵',sub:'Hicaz makamı'},
+  sade:{name:'Sade Bip',ico:'🔔',sub:'Yalın uyarı'},
+  kuran:{name:'Kur\'an Tilaveti',ico:'📖',sub:'Kısa ayet'},
 };
-
-function playMaqam(id,loop){
-  if(id==='silent')return 0;
-  const m=MAQAM[id]||MAQAM.hicaz;
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const masterGain=ctx.createGain();masterGain.gain.value=0.42;
-    // Reverb (konvolüsyon yerine basit delay+feedback)
-    const delay=ctx.createDelay(0.4);delay.delayTime.value=0.22;
-    const fb=ctx.createGain();fb.gain.value=0.28;
-    const wet=ctx.createGain();wet.gain.value=0.22;
-    delay.connect(fb);fb.connect(delay);delay.connect(wet);wet.connect(ctx.destination);
-    masterGain.connect(ctx.destination);masterGain.connect(delay);
-
-    let t=ctx.currentTime+0.05;
-
-    m.phrases.forEach(phrase=>{
-      phrase.forEach(note=>{
-        if(!note.f){t+=note.d;return;}
-        if(note.pluck){
-          // Ud teli: kısa atak + uzun exponential decay + harmonik
-          [1,2,3].forEach((harm,hi)=>{
-            const o=ctx.createOscillator();const g=ctx.createGain();
-            o.type=hi===0?'sawtooth':'sine';
-            o.frequency.value=note.f*harm;
-            const harmGain=[0.5,0.25,0.1][hi];
-            g.gain.setValueAtTime(0,t);
-            g.gain.linearRampToValueAtTime(harmGain,t+0.008);
-            g.gain.exponentialRampToValueAtTime(0.001,t+note.d*3.5);
-            o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+note.d*3.5+0.1);
-          });
-          t+=note.d;return;
-        }
-        if(note.bell){
-          // Çan: hızlı atak çok yavaş decay, inharmonik
-          [1,2.756,5.404].forEach((ratio,hi)=>{
-            const o=ctx.createOscillator();const g=ctx.createGain();
-            o.type='sine';o.frequency.value=note.f*ratio;
-            const hv=[0.4,0.15,0.05][hi];
-            g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(hv,t+0.004);
-            g.gain.exponentialRampToValueAtTime(0.001,t+note.d*4);
-            o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+note.d*4+0.05);
-          });
-          t+=note.d;return;
-        }
-
-        // Normal nota: sin/triangle + harmonik 2+3
-        const osc=ctx.createOscillator();const g=ctx.createGain();
-        osc.type=m.type||'sine';osc.frequency.setValueAtTime(note.f,t);
-
-        // Vibrato
-        if(note.v&&note.v>0){
-          const vib=ctx.createOscillator();const vibG=ctx.createGain();
-          vib.frequency.value=5.2+Math.random()*0.5;vibG.gain.value=0;
-          const vDelay=note.d*0.25;
-          vibG.gain.setValueAtTime(0,t+vDelay);
-          vibG.gain.linearRampToValueAtTime(note.f*0.012*note.v,t+vDelay+0.12);
-          vibG.gain.setValueAtTime(note.f*0.012*note.v,t+note.d*0.8);
-          vibG.gain.linearRampToValueAtTime(0,t+note.d);
-          vib.connect(vibG);vibG.connect(osc.frequency);
-          vib.start(t);vib.stop(t+note.d+0.05);
-        }
-
-        // Ney nefes gürültüsü
-        if(m.breathNoise){
-          const buf=ctx.createBuffer(1,ctx.sampleRate*note.d,ctx.sampleRate);
-          const data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*0.04;
-          const ns=ctx.createBufferSource();ns.buffer=buf;
-          const nf=ctx.createBiquadFilter();nf.type='bandpass';nf.frequency.value=note.f*1.6;nf.Q.value=2;
-          const ng=ctx.createGain();ng.gain.value=0.18;
-          ns.connect(nf);nf.connect(ng);ng.connect(masterGain);ns.start(t);
-        }
-
-        g.gain.setValueAtTime(0,t);
-        g.gain.linearRampToValueAtTime(0.38,t+Math.min(0.08,note.d*0.15));
-        g.gain.setValueAtTime(0.38,t+note.d*0.72);
-        g.gain.exponentialRampToValueAtTime(0.001,t+note.d+0.05);
-        osc.connect(g);g.connect(masterGain);osc.start(t);osc.stop(t+note.d+0.1);
-
-        // 2. harmonik (yarım ses tını zenginleştirme)
-        const o2=ctx.createOscillator();const g2=ctx.createGain();
-        o2.type='sine';o2.frequency.value=note.f*2;
-        g2.gain.setValueAtTime(0,t);g2.gain.linearRampToValueAtTime(0.06,t+0.05);
-        g2.gain.exponentialRampToValueAtTime(0.001,t+note.d*0.8);
-        o2.connect(g2);g2.connect(masterGain);o2.start(t);o2.stop(t+note.d+0.05);
-
-        t+=note.d+0.04;
-      });
-      t+=0.15; // cümleler arası nefes
-    });
-
-    const totalMs=(t-ctx.currentTime)*1000+600;
-    return totalMs;
-  }catch(e){return 4000;}
-}
-
-function playSound(type){
-  if(alarmLoop)return;
-  if(type==='silent')return;
-  if(type==='custom'&&customAudioUrl){
-    const play=()=>{const a=new Audio(customAudioUrl);a.volume=0.85;a.play().catch(()=>{});};
-    play();alarmLoop=setInterval(play,6500);return;
-  }
-  const dur=playMaqam(type);
-  alarmLoop=setInterval(()=>playMaqam(type),(dur||5000)+1000);
-}
-
-function previewSound(type){
-  if(previewAudio){previewAudio.pause();previewAudio=null;}
-  if(type==='silent'){toast('Sessiz modu — görsel uyarı','fa-volume-xmark');return;}
-  playMaqam(type);
-  const nm=SOUNDS.find(x=>x.id===type);
-  toast('🎵 '+(nm?nm.name:type)+' önizleniyor');
-}
-
 function renderSoundGrid(){
-  const grid=document.getElementById('sound-grid');if(!grid)return;
-  grid.innerHTML='';
-  const cur=S.cfg.sound||'ezan1';
-  SOUNDS.forEach(s=>{
-    const div=document.createElement('div');
-    div.className='sound-opt'+(cur===s.id?' sel':'');
-    div.onclick=()=>selectSound(s.id);
-    div.innerHTML=`
-      <div class="sound-opt-check"><i class="fa-solid fa-check"></i></div>
-      <div class="sound-opt-ico">${s.ico}</div>
-      <div class="sound-opt-name">${s.name}</div>
-      <div class="sound-opt-sub">${s.sub}</div>
-      <i class="fa-solid fa-play play-ico"></i>`;
-    div.querySelector('.play-ico').addEventListener('click',e=>{e.stopPropagation();previewSound(s.id);});
-    grid.appendChild(div);
+  const el=document.getElementById('sound-grid');if(!el)return;el.innerHTML='';
+  Object.entries(SOUNDS).forEach(([k,v])=>{
+    const c=document.createElement('div');c.className='sound-opt'+(S.cfg.sound===k?' sel':'');
+    c.innerHTML=`<div class="sound-opt-check"><i class="fa-solid fa-check"></i></div><div class="sound-opt-ico">${v.ico}</div><div class="sound-opt-name">${v.name}</div><div class="sound-opt-sub">${v.sub}</div>`;
+    c.onclick=()=>{S.cfg.sound=k;document.getElementById('sel-sound-lbl').textContent='Seçili: '+v.name;document.querySelectorAll('.sound-opt').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');save();};
+    el.appendChild(c);
   });
-  // Özel ses varsa grid'e ekle
-  if(customAudioName){
-    const div=document.createElement('div');
-    const isCur=cur==='custom';
-    div.className='sound-opt'+(isCur?' sel':'');
-    div.onclick=()=>selectSound('custom');
-    div.innerHTML=`
-      <div class="sound-opt-check"><i class="fa-solid fa-check"></i></div>
-      <div class="sound-opt-ico">🎶</div>
-      <div class="sound-opt-name" style="font-size:10px">${customAudioName.length>14?customAudioName.slice(0,12)+'…':customAudioName}</div>
-      <div class="sound-opt-sub">Yüklenen ses</div>
-      <i class="fa-solid fa-play play-ico"></i>`;
-    div.querySelector('.play-ico').addEventListener('click',e=>{e.stopPropagation();testCustomSound();});
-    grid.appendChild(div);
-  }
-  const lbl=document.getElementById('sel-sound-lbl');
-  if(lbl){const s=SOUNDS.find(x=>x.id===cur);lbl.textContent='Seçili: '+(cur==='custom'?customAudioName||'Kişisel Ses':s?s.name:'Klasik Ezan');}
 }
-
-function selectSound(id){
-  S.cfg.sound=id;save();renderSoundGrid();
-}
-
-// Özel ses yükleme
-function loadCustomSound(inp){
-  const file=inp.files[0];if(!file)return;
-  const maxMB=10;
-  if(file.size>maxMB*1024*1024){toast(`Dosya max ${maxMB}MB olabilir.`,false);inp.value='';return;}
+function loadCustomSound(input){
+  const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    customAudioUrl=e.target.result;
-    customAudioName=file.name.replace(/\.[^.]+$/,'');
-    // localStorage'a kaydet (base64)
-    try{localStorage.setItem('cm6_audio',customAudioUrl);localStorage.setItem('cm6_audio_name',customAudioName);}catch(e){toast('Ses kaydedilemedi, hafıza dolu.',false);}
-    showCustomAudioRow();
-    selectSound('custom');
-    renderSoundGrid();
-    toast('Ses yüklendi: '+customAudioName+' 🎵');
+    _customAudioData=e.target.result;
+    S.cfg.sound='custom';
+    const row=document.getElementById('custom-audio-row');
+    const nm=document.getElementById('custom-audio-name');
+    if(row){row.style.display='flex';}
+    if(nm)nm.textContent=file.name;
+    document.getElementById('sel-sound-lbl').textContent='Seçili: '+file.name;
+    save();toast('Ses yüklendi ✓');
   };
   reader.readAsDataURL(file);
 }
-function showCustomAudioRow(){
-  const row=document.getElementById('custom-audio-row');
-  const nm=document.getElementById('custom-audio-name');
-  if(row){row.style.display='flex';}
-  if(nm&&customAudioName)nm.textContent=customAudioName;
-}
-function testCustomSound(){
-  if(!customAudioUrl){toast('Önce ses yükleyin.',false);return;}
-  if(previewAudio){previewAudio.pause();}
-  previewAudio=new Audio(customAudioUrl);previewAudio.volume=0.8;
-  previewAudio.play().catch(()=>toast('Ses çalınamadı.',false));
-}
+function testCustomSound(){if(_customAudioData){const a=new Audio(_customAudioData);a.play().catch(()=>{});}}
 function removeCustomSound(){
-  customAudioUrl=null;customAudioName=null;
-  try{localStorage.removeItem('cm6_audio');localStorage.removeItem('cm6_audio_name');}catch(e){}
-  document.getElementById('custom-audio-row').style.display='none';
-  document.getElementById('sound-file-inp').value='';
-  if(S.cfg.sound==='custom'){S.cfg.sound='ezan1';save();}
-  renderSoundGrid();toast('Ses silindi.');
+  _customAudioData=null;S.cfg.sound='hicaz';
+  const row=document.getElementById('custom-audio-row');if(row)row.style.display='none';
+  document.getElementById('sel-sound-lbl').textContent='Seçili: Klasik Ezan Melodisi';
+  save();toast('Ses kaldırıldı');
 }
-function loadCustomAudioFromStorage(){
-  try{
-    const url=localStorage.getItem('cm6_audio');
-    const name=localStorage.getItem('cm6_audio_name');
-    if(url&&name){customAudioUrl=url;customAudioName=name;showCustomAudioRow();}
-  }catch(e){}
+function playAlarmSound(){
+  if(_customAudioData){_alarmAudio=new Audio(_customAudioData);}
+  else{_alarmAudio=new AudioContext?new Audio():null;
+    // Beep fallback
+    try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=S.cfg.sound==='sade'?880:660;o.type='sine';g.gain.setValueAtTime(0.5,ctx.currentTime);o.start();o.stop(ctx.currentTime+0.4);setTimeout(()=>{try{const o2=ctx.createOscillator();const g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.frequency.value=S.cfg.sound==='sade'?880:880;o2.type='sine';g2.gain.setValueAtTime(0.5,ctx.currentTime);o2.start();o2.stop(ctx.currentTime+0.4);}catch(e){}},600);}catch(e){}}
+  if(_alarmAudio){_alarmAudio.loop=true;_alarmAudio.play().catch(()=>{});}
 }
-
-// ─── renderSetPage'e ses grid'i ekle ───────
-const _origRenderSetPage=typeof renderSetPage==='function'?renderSetPage:null;
+function testAlarm(){
+  toast('Alarm sesi test ediliyor...','fa-music');
+  playAlarmSound();
+  setTimeout(()=>{if(_alarmAudio){_alarmAudio.pause();_alarmAudio=null;}},3000);
+}
+function stopAlarm(){
+  if(_alarmAudio){_alarmAudio.pause();_alarmAudio=null;}
+  clearInterval(alarmLoop);
+  document.getElementById('alarm-ov').classList.remove('ring');
+}
+function snoozeAlarm(){
+  stopAlarm();
+  setTimeout(()=>triggerAlarm(document.getElementById('al-vname').textContent,document.getElementById('al-vtime').textContent),5*60*1000);
+  toast('5 dakika ertelendi');
+}
+function triggerAlarm(name,time){
+  document.getElementById('al-vname').textContent=name;
+  document.getElementById('al-vtime').textContent=time;
+  const qs=DQ[Math.floor(Math.random()*DQ.length)];
+  document.getElementById('al-qr').textContent=qs.ar;
+  document.getElementById('alarm-ov').classList.add('ring');
+  playAlarmSound();
+  if(navigator.vibrate)navigator.vibrate([400,200,400,200,400]);
+}
 function schedAlarms(){
-  schedIds.forEach(clearTimeout);schedIds=[];if(!S.cfg.alarm)return;
-  const earlyMs=S.cfg.early*60000;
-  const keys=[...PK];if(S.cfg.imsak)keys.unshift('imsak');
-  keys.forEach(k=>{
-    if(k!=='imsak'&&S.alarms[k]===false)return;
+  schedIds.forEach(clearTimeout);schedIds=[];
+  if(!S.cfg.alarm)return;
+  const now=new Date(),nm=nowMin();
+  PK.forEach(k=>{
+    if(S.alarms[k]===false)return;
     const t=S.times[k];if(!t||t==='--:--')return;
-    const[h,m]=t.split(':').map(Number);const td=new Date();td.setHours(h,m,0,0);
-    const diff=td.getTime()-earlyMs-Date.now();
-    if(diff>0&&diff<86400000)schedIds.push(setTimeout(()=>triggerAlarm(k,t),diff));
+    const tm=toMin(t)-S.cfg.early;
+    let diff=tm-nm;if(diff<0)diff+=1440;
+    if(diff>720)return;
+    const id=setTimeout(()=>triggerAlarm(PL[k]+' Namazı',t),diff*60000);
+    schedIds.push(id);
+  });
+  if(S.cfg.imsak&&S.times.imsak&&S.times.imsak!=='--:--'){
+    const tm=toMin(S.times.imsak)-5,diff2=tm-nm<0?tm-nm+1440:tm-nm;
+    if(diff2<=720){const id=setTimeout(()=>triggerAlarm('İmsak · Sahur Sonu',S.times.imsak),diff2*60000);schedIds.push(id);}
+  }
+}
+function togPrayer(k,btn){
+  S.alarms[k]=S.alarms[k]===false;
+  btn.className='atog '+(S.alarms[k]===false?'off':'on');
+  save();schedAlarms();
+}
+function renderPerAlarms(){
+  const el=document.getElementById('per-alarms');if(!el)return;el.innerHTML='';
+  PK.forEach(k=>{
+    const on=S.alarms[k]!==false;
+    const row=document.createElement('div');row.className='sr';
+    row.innerHTML=`<div class="sr-ico" style="background:${PB[k]};color:${PC[k]}"><i class="fa-solid ${PI[k]}"></i></div><div class="sr-info"><div class="t">${PL[k]} Namazı</div><div class="s">${S.times[k]||'--:--'}</div></div><button class="atog ${on?'on':'off'}" id="atog2-${k}" onclick="togPrayer('${k}',this)"></button>`;
+    el.appendChild(row);
   });
 }
-// ═══════════════════════════════════════════
-// ALARM ZAMANLAMA
-// ═══════════════════════════════════════════
-function triggerAlarm(k,t){
-  const lbl=k==='imsak'?'İmsak (Sahur Sonu)':(PL[k]||k)+' Namazı';
-  document.getElementById('al-vname').textContent=lbl;document.getElementById('al-vtime').textContent=t;
-  const q=DQ[Math.floor(Math.random()*DQ.length)];document.getElementById('al-qr').textContent=q.ar;
-  document.getElementById('alarm-ov').classList.add('ring');
-  if(S.cfg.sound!=='silent')playSound(S.cfg.sound);
-}
-function stopAlarm(){document.getElementById('alarm-ov').classList.remove('ring');if(alarmLoop){clearInterval(alarmLoop);alarmLoop=null;}}
-function snoozeAlarm(){
-  stopAlarm();toast('5 dakika sonra tekrar uyaracak!');
-  const vn=document.getElementById('al-vname').textContent,vt=document.getElementById('al-vtime').textContent;
-  setTimeout(()=>{document.getElementById('al-vname').textContent=vn;document.getElementById('al-vtime').textContent=vt;document.getElementById('alarm-ov').classList.add('ring');if(S.cfg.sound!=='silent')playSound(S.cfg.sound);},300000);
-}
-function testAlarm(){triggerAlarm('ogle',S.times.ogle||'12:00');}
 
 // ═══════════════════════════════════════════
-// KILDIM
+// HIJRI DATE
 // ═══════════════════════════════════════════
-function handleKil(k){if(S.done[k])return;S.done[k]=true;save();render();confetti();showKilModal(k);}
-function showKilModal(k){
-  const ms=MOT[k]||MOT.ogle;const m=ms[Math.floor(Math.random()*ms.length)];
+function hijriDate(){
+  try{
+    const hd=new Intl.DateTimeFormat('tr-TR-u-ca-islamic',{day:'numeric',month:'long',year:'numeric'}).format(new Date());
+    return hd+' Hicri';
+  }catch(e){return '';}
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS PAGE
+// ═══════════════════════════════════════════
+function renderSetPage(){
+  const sn=document.getElementById('set-name');const sc=document.getElementById('set-city');
+  if(sn)sn.value=S.name||'';
+  if(sc){sc.value=S.city||'';const opts=sc.querySelectorAll('option');opts.forEach(o=>{if(o.value===S.city)o.selected=true;});}
+  const ta=document.getElementById('tog-alarm'),ti=document.getElementById('tog-imsak');
+  if(ta)ta.className='tog '+(S.cfg.alarm?'on':'off');
+  if(ti)ti.className='tog '+(S.cfg.imsak?'on':'off');
+  const se=document.getElementById('sel-early'),sm=document.getElementById('sel-method');
+  if(se)se.value=S.cfg.early;if(sm)sm.value=S.cfg.method||'diyanet';
+  const tt=document.getElementById('tog-theme');
+  if(tt)tt.className='tog '+(S.cfg.theme==='light'?'on':'off');
+  renderSoundGrid();renderPerAlarms();
+}
+function saveSettings(){
+  const n=document.getElementById('set-name')?.value.trim();
+  const c=document.getElementById('set-city')?.value;
+  if(n!==undefined)S.name=n;
+  if(c){const cd=CITIES[c];if(cd){S.city=c;S.lat=cd.lat;S.lon=cd.lon;S.gpsLabel=null;}}
+  save();render();toast('Kaydedildi ✓');
+}
+function togSet(key,btn){
+  S.cfg[key]=!S.cfg[key];btn.className='tog '+(S.cfg[key]?'on':'off');
+  save();if(key==='alarm'||key==='imsak')schedAlarms();
+}
+function saveSel(key,val){
+  S.cfg[key]=isNaN(val)?val:Number(val);save();
+  if(key==='method'){S.times=calcT(S.lat,S.lon,new Date(),S.cfg.method);renderPerAlarms();}
+  if(key==='early')schedAlarms();
+}
+
+// ═══════════════════════════════════════════
+// KIL (namaz kıldım)
+// ═══════════════════════════════════════════
+function handleKil(k,skipModal){
+  if(S.done[k])return;
+  S.done[k]=true;save();renderList();renderDots();confetti();
+  if(skipModal)return;
+  const mot=MOT[k];const m=mot[Math.floor(Math.random()*mot.length)];
   document.getElementById('m-ico').textContent=m.ico;
-  document.getElementById('m-vakit').textContent=(PL[k]||k).toUpperCase()+' NAMAZI';
+  document.getElementById('m-vakit').textContent=PL[k]+' Namazı';
   document.getElementById('m-quote').textContent=m.q;
   document.getElementById('m-src').textContent=m.src;
   document.getElementById('m-desc').textContent=m.d;
   openModal('kil-modal');
 }
-
-// ═══════════════════════════════════════════
-// SETTINGS
-// ═══════════════════════════════════════════
-function renderSetPage(){
-  document.getElementById('set-name').value=S.name||'';
-  document.getElementById('set-city').value=S.city||'';
-  document.getElementById('tog-alarm').className='tog '+(S.cfg.alarm?'on':'off');
-  document.getElementById('tog-imsak').className='tog '+(S.cfg.imsak?'on':'off');
-  document.getElementById('sel-early').value=S.cfg.early||10;
-  document.getElementById('sel-method').value=S.cfg.method||'diyanet';
-  document.getElementById('tog-theme').className='tog '+(S.cfg.theme==='light'?'on':'off');
-  renderPerAlarms();
-  renderSoundGrid();
-}
-function renderPerAlarms(){
-  const el=document.getElementById('per-alarms');if(!el)return;el.innerHTML='';
-  PK.forEach(k=>{const on=S.alarms[k]!==false;const row=document.createElement('div');row.className='sr';row.innerHTML=`<div class="sr-ico" style="background:${PB[k]};color:${PC[k]}"><i class="fa-solid ${PI[k]}"></i></div><div class="sr-info"><div class="t">${PL[k]} Namazı</div><div class="s">${S.times[k]||'--:--'}</div></div><button class="tog ${on?'on':'off'}" onclick="togPrayerSet('${k}',this)"></button>`;el.appendChild(row);});
-}
-function togSet(key,btn){S.cfg[key]=!S.cfg[key];btn.className='tog '+(S.cfg[key]?'on':'off');save();schedAlarms();}
-function saveSel(key,val){S.cfg[key]=key==='early'?parseInt(val):val;save();if(key!=='sound'&&key!=='method')schedAlarms();}
-function togPrayer(k,btn){S.alarms[k]=!S.alarms[k];btn.className='atog '+(S.alarms[k]?'on':'off');save();schedAlarms();}
-function togPrayerSet(k,btn){S.alarms[k]=S.alarms[k]===false;btn.className='tog '+(S.alarms[k]?'off':'on');S.alarms[k]=!S.alarms[k];btn.className='tog '+(S.alarms[k]?'on':'off');const t=document.getElementById('atog-'+k);if(t)t.className='atog '+(S.alarms[k]?'on':'off');save();schedAlarms();}
-function saveSettings(){
-  const n=document.getElementById('set-name').value.trim(),c=document.getElementById('set-city').value;
-  S.name=n;if(c&&c!==S.city){S.city=c;const cd=CITIES[c];S.lat=cd.lat;S.lon=cd.lon;}
-  save();render();renderGroups();toast('Ayarlar kaydedildi!');
-}
-
-// ═══════════════════════════════════════════
-// MODALS & UTILS
-// ═══════════════════════════════════════════
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-// ═══════════════════════════════════════════
-// HİCRİ TARİH
-// ═══════════════════════════════════════════
-function hijriDate(){
-  const now=new Date();
-  try{
-    const hf=new Intl.DateTimeFormat('tr-TR-u-ca-islamic',{day:'numeric',month:'long',year:'numeric'});
-    return hf.format(now);
-  }catch(e){
-    // Fallback hesaplama
-    const jd=Math.floor((now.getTime()/86400000)+2440587.5);
-    const l=jd-1948440+10632,n=Math.floor((l-1)/10631),l2=l-10631*n+354;
-    const j=Math.floor((10985-l2)/5316)*Math.floor((50*l2)/17719)+Math.floor(l2/5670)*Math.floor((43*l2)/15238);
-    const l3=l2-Math.floor((30-j)/15)*Math.floor((17719*j)/50)-Math.floor(j/16)*Math.floor((15238*j)/43)+29;
-    const m=Math.floor((24*l3)/709),d=l3-Math.floor((709*m)/24),y=30*n+j-30;
-    const months=['Muharrem','Safer','Rebiülevvel','Rebiülahir','Cemaziyelevvel','Cemaziyelahir','Recep','Şaban','Ramazan','Şevval','Zilkade','Zilhicce'];
-    return `${d} ${months[m-1]||''} ${y}`;
-  }
-}
-
-// ═══════════════════════════════════════════
-// KONFETİ
-// ═══════════════════════════════════════════
 function confetti(){
-  const colors=['#3ddc84','#e8c547','#ff5c5c','#818cf8','#4ade80','#fbbf24'];
-  for(let i=0;i<22;i++){
-    const el=document.createElement('div');
-    const size=6+Math.random()*8;
-    el.style.cssText=`position:fixed;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'2px'};top:${30+Math.random()*30}%;left:${10+Math.random()*80}%;z-index:9999;pointer-events:none;animation:cf ${0.7+Math.random()*0.8}s ease-out forwards;animation-delay:${Math.random()*0.3}s;`;
-    document.body.appendChild(el);
-    setTimeout(()=>el.remove(),1500);
+  const colors=['#3ddc84','#e8c547','#ff5c5c','#818cf8','#22c55e'];
+  for(let i=0;i<18;i++){
+    const c=document.createElement('div');c.className='cf';
+    c.style.cssText=`left:${20+Math.random()*60}%;top:30%;background:${colors[i%colors.length]};animation-delay:${Math.random()*0.4}s;`;
+    document.body.appendChild(c);setTimeout(()=>c.remove(),1200);
   }
 }
 
 // ═══════════════════════════════════════════
-// MODALS & UTILS
+// INIT
 // ═══════════════════════════════════════════
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-function copyInvite(){
-  const g=S.groups.find(x=>x.id===S.curGroup);
-  const link='cemaatim.app/join/'+(g?g.id.slice(-8):'xxx');
-  if(navigator.clipboard){navigator.clipboard.writeText(link).then(()=>toast('Davet linki kopyalandı! 🔗')).catch(()=>toast('Davet linki kopyalandı! 🔗'));}
-  else{toast('Davet linki kopyalandı! 🔗');}
-}
-document.addEventListener('DOMContentLoaded',async()=>{
-  // Modal overlay'e tıklayınca kapanma
-  document.querySelectorAll('.modal-ov').forEach(ov=>{
-    ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');});
-  });
-  // Yıldızları oluştur
+window.addEventListener('DOMContentLoaded',async()=>{
   genStars();
-  // 1) Önce localStorage'dan anlık yükle (hızlı)
-  try{_applyUser(JSON.parse(localStorage.getItem('cm6')||'{}'));}catch(e){}
-  // Özel ses varsa geri yükle
-  loadCustomAudioFromStorage();
-  // Tema uygula
+  await load();
   applyTheme(S.cfg.theme||'dark');
-  // Eğer şehir seçilmişse direkt ana sayfaya git (localStorage verisiyle)
-  if(S.city||S.lat){goMain();}
-  // 2) Sunucudan güncel veri çek (async — UI donmaz)
-  syncBadge('⏳ Yükleniyor...',0);
-  const d=await apiFetch('/api/user');
-  if(d){_applyUser(d);localStorage.setItem('cm6',JSON.stringify(d));syncBadge('✅ Senkronize');
-    if(S.city||S.lat)goMain();}
-  else{syncBadge('📴 Çevrimdışı');if(S.city||S.lat)goMain();}
-  // 3) Grupları sunucudan yükle (bağlanamazsa devam et)
-  loadGroups().catch(()=>{});
-  // Her dakika namaz vakti yenile
-  setInterval(()=>{if(document.getElementById('pg-main').classList.contains('show'))render();},60000);
-  // Her 30sn chat yenile
-  setInterval(()=>{if(S.curGroup)refreshChat(S.curGroup);},30000);
+  if(S.lat){goMain();}
+  else{showPage('pg-setup');}
+  setInterval(()=>{if(S.lat){renderNext();renderList();}},30000);
 });
 </script>
 </body>
