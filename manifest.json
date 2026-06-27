@@ -1,0 +1,46 @@
+{
+  "name": "Cemaatim",
+  "short_name": "Cemaatim",
+  "description": "Namaz vakitleri, kıble, tesbih, Ramazan — her şey tek uygulamada",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07130d",
+  "theme_color": "#07130d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/npm/twemoji@latest/assets/72x72/1f54c.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/npm/twemoji@latest/assets/72x72/1f54c.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/npm/twemoji@latest/assets/72x72/1f54c.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "religion"],
+  "lang": "tr",
+  "shortcuts": [
+    {
+      "name": "Namaz Vakitleri",
+      "short_name": "Vakitler",
+      "description": "Bugünkü namaz vakitlerine bak",
+      "url": "/?tab=vakit",
+      "icons": [{"src": "https://cdn.jsdelivr.net/npm/twemoji@latest/assets/72x72/1f54c.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Kıble",
+      "short_name": "Kıble",
+      "description": "Kıble pusulasını aç",
+      "url": "/?tab=kible",
+      "icons": [{"src": "https://cdn.jsdelivr.net/npm/twemoji@latest/assets/72x72/1f54c.png", "sizes": "192x192"}]
+    }
+  ]
+}
