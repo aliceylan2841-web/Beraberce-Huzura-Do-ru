@@ -312,7 +312,7 @@ app.delete('/api/groups/:id/leave', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════
-// AI DUA / SURE DOLDURMA (ÜCRETSİZ GOOGLE GEMINI)
+// AI DUA / SURE DOLDURMA (ÜCRETSİZ GOOGLE GEMINI - OTOMATİK YEDEKLİ)
 // ═══════════════════════════════════════════════════════
 
 app.post('/api/ai/dua-fill', async (req, res) => {
@@ -331,26 +331,40 @@ SADECE aşağıdaki JSON formatında, başka hiçbir açıklama eklemeden cevap 
 {"arabic":"<doğru harekeli Arapça metin>","meaning":"<sade, doğru Türkçe anlamı/meali>","src":"<kaynak, örn. 'Kur'an-ı Kerim · Bakara 255' veya 'Hadis-i Şerif'>"}
 Eğer başlık tanınmıyorsa veya emin değilsen, {"error":"bulunamadı"} döndür. Metinleri uydurma, sadece kesin bildiğin, doğru ve yaygın kabul gören metinleri ver.`;
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    // Sırasıyla denenecek güncel Gemini modelleri
+    const candidateModels = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+    let data = null;
+    let lastErrorText = '';
 
-    const r = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json'
-        }
-      })
-    });
+    for (const model of candidateModels) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      
+      const r = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json'
+          }
+        })
+      });
 
-    if (!r.ok) {
-      const errText = await r.text().catch(() => '');
-      console.error('Gemini API hata:', r.status, errText);
+      if (r.ok) {
+        data = await r.json();
+        console.log(`✅ Çalışan Gemini Modeli Bulundu: ${model}`);
+        break; // Çalışan model bulunduğunda döngüden çık
+      } else {
+        lastErrorText = await r.text().catch(() => '');
+        console.warn(`⚠️ Model ${model} (${r.status}) yanıt vermedi, sonraki deneniyor...`);
+      }
+    }
+
+    if (!data) {
+      console.error('Tüm modeller başarısız oldu. Son hata:', lastErrorText);
       return res.status(502).json({ error: 'AI servisi yanıt vermedi.' });
     }
 
-    const data = await r.json();
     const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text || '')
       .replace(/^```json\s*|```\s*$/g, '')
       .trim();
@@ -375,20 +389,4 @@ Eğer başlık tanınmıyorsa veya emin değilsen, {"error":"bulunamadı"} dönd
     console.error('dua-fill hata:', e);
     return res.status(500).json({ error: 'Sunucu hatası.' });
   }
-});
-
-// ── Sağlık kontrolü ──────────────────────────────────
-app.get('/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
-
-// ── ARAYÜZ (HTML) SERVİS ETME AYARI ─────────────
-app.use(express.static(path.join(__dirname, 'namaz-sunucu')));
-app.use(express.static(__dirname));
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'namaz-sunucu', 'index_server.html'));
-});
-
-// ── Sunucuyu başlat ──────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`✅ Namaz Takip sunucusu çalışıyor: http://localhost:${PORT}`);
 });
