@@ -232,21 +232,28 @@ app.get('/api/groups/:id', (req, res) => {
   res.json(g);
 });
 
+// DÜZELTİLDİ: gün değişimi kontrolü artık YENİ değeri yazmadan ÖNCE yapılıyor.
+// Eski sırada, günün ilk "kıldım" işareti kaydedildiği anda hemen ardından
+// "gün değişti" kontrolü bütün grubun done alanını sıfırlıyor ve kullanıcının
+// az önce işaretlediği kendi durumu da anında siliniyordu.
 app.patch('/api/groups/:id/done', (req, res) => {
   const uid = getUser(req);
   if (!uid) return res.status(401).json({ error: 'x-user-id header gerekli' });
 
   const { done, kildiAt } = req.body;
+  const groupId = req.params.id;
 
+  // 1) Önce gün değişmiş mi kontrol et — değiştiyse HERKESİ sıfırla
+  const g = db.prepare('SELECT day_key FROM groups_t WHERE id = ?').get(groupId);
+  if (g && g.day_key !== tkey()) {
+    db.prepare('UPDATE members SET done = ? WHERE group_id = ?').run(JSON.stringify({}), groupId);
+    db.prepare('UPDATE groups_t SET day_key = ? WHERE id = ?').run(tkey(), groupId);
+  }
+
+  // 2) SONRA bu kullanıcının güncel durumunu yaz
   db.prepare(`
     UPDATE members SET done = ?, kildi_at = ? WHERE group_id = ? AND user_id = ?
-  `).run(JSON.stringify(done || {}), kildiAt || '', req.params.id, uid);
-
-  const g = db.prepare('SELECT day_key FROM groups_t WHERE id = ?').get(req.params.id);
-  if (g && g.day_key !== tkey()) {
-    db.prepare('UPDATE members SET done = ? WHERE group_id = ?').run(JSON.stringify({}), req.params.id);
-    db.prepare('UPDATE groups_t SET day_key = ? WHERE id = ?').run(tkey(), req.params.id);
-  }
+  `).run(JSON.stringify(done || {}), kildiAt || '', groupId, uid);
 
   res.json({ ok: true });
 });
@@ -327,15 +334,17 @@ SADECE aşağıdaki JSON formatında, başka hiçbir açıklama eklemeden cevap 
 {"arabic":"<doğru harekeli Arapça metin>","meaning":"<sade, doğru Türkçe anlamı/meali>","src":"<kaynak, örn. 'Kur'an-ı Kerim · Bakara 255' veya 'Hadis-i Şerif'>"}
 Eğer başlık tanınmıyorsa veya emin değilsen, {"error":"bulunamadı"} döndür. Metinleri uydurma, sadece kesin bildiğin, doğru ve yaygın kabul gören metinleri ver.`;
 
-   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+    // NOT: gemini-1.5-flash tamamen kapatıldı (404 döner).
+    // Yerine hâlâ ücretsiz katmanda olan gemini-2.5-flash-lite kullanılıyor.
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
 
-const r = await fetch(endpoint, {
+    const r = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          responseMimeType: "application/json"
+          responseMimeType: 'application/json'
         }
       })
     });
@@ -347,7 +356,10 @@ const r = await fetch(endpoint, {
     }
 
     const data = await r.json();
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // Model bazen JSON'u ```json ... ``` bloğu içine sarabiliyor — temizle.
+    const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text || '')
+      .replace(/^```json\s*|```\s*$/g, '')
+      .trim();
 
     let parsed;
     try {
