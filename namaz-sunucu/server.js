@@ -87,6 +87,7 @@ Eğer başlık tanınmıyorsa veya emin değilsen, {"error":"bulunamadı"} dönd
       return res.status(502).json({ error: 'AI cevabı ayrıştırılamadı.' });
     }
 
+    
     if (parsed.error || !parsed.arabic) {
       return res.status(404).json({ error: 'Bu başlık için güvenilir bir metin bulunamadı.' });
     }
