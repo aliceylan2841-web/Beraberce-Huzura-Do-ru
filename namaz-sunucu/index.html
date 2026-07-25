@@ -1794,7 +1794,8 @@ const SURE_LIB=[
    ar:'إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ\n\nفَصَلِّ لِرَبِّكَ وَانْحَرْ\n\nإِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ',
    meaning:'Şüphesiz biz sana Kevser\'i verdik. Öyleyse Rabbin için namaz kıl ve kurban kes. Doğrusu sana buğzeden var ya, işte asıl soyu kesik olan odur.',src:'Kur\'an-ı Kerim · 108. Sure'},
 ];
-let _okuCurrent=null,_okuAudio=null,_okuSpeaking=false;
+let _okuCurrent=null,_okuAudio=null,_okuSpeaking=false,_okuQueue=[],_okuQueueIdx=0,_okuStallTimer=null;
+const _surahAyahCache={};
 
 function renderSozler(){
   const el=document.getElementById('soz-list');if(!el)return;el.innerHTML='';
@@ -1836,19 +1837,65 @@ function openOku(type,id){
 }
 function closeOku(){stopOkuAudio();showPage('pg-main');}
 
-function toggleOkuAudio(){
+async function toggleOkuAudio(){
   if((_okuAudio&&!_okuAudio.paused)||_okuSpeaking){stopOkuAudio();return;}
   const status=document.getElementById('oku-audio-status');
+  const btn=document.getElementById('oku-play-btn');
   if(_okuCurrent&&_okuCurrent.surahNum){
-    status.textContent='Yükleniyor...';
-    const btn=document.getElementById('oku-play-btn');
-    const url=`https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/${_okuCurrent.surahNum}.mp3`;
-    _okuAudio=new Audio(url);
-    _okuAudio.onplay=()=>{btn.innerHTML='<i class="fa-solid fa-pause"></i> Durdur';status.textContent='Mişarî Râşid el-Afâsî okuyor 🎧';};
-    _okuAudio.onended=()=>stopOkuAudio();
-    _okuAudio.onerror=()=>{status.textContent='Ses yüklenemedi, cihaz sesiyle deneniyor...';speakOku();};
-    _okuAudio.play().catch(()=>{status.textContent='Ses oynatılamadı, cihaz sesiyle deneniyor...';speakOku();});
+    status.textContent='Ayetler hazırlanıyor...';
+    btn.disabled=true;
+    try{
+      const ayahs=await fetchSurahAyahs(_okuCurrent.surahNum);
+      btn.disabled=false;
+      if(!ayahs||!ayahs.length)throw new Error('boş liste');
+      _okuQueue=ayahs;_okuQueueIdx=0;
+      playOkuQueueStep();
+    }catch(e){
+      btn.disabled=false;
+      status.textContent='Ayet listesi alınamadı, cihaz sesiyle deneniyor...';
+      speakOku();
+    }
   }else{speakOku();}
+}
+// Sure ayetlerini (numara + ses linki) resmi, garantili çalışan
+// Al-Quran Cloud API'sinden çeker — tek parça "audio-surah" dosyası
+// bazı ağlarda güvenilir yüklenmediği için artık ayet ayet zincirleme
+// çalınıyor (bir ayet takılırsa otomatik sıradakine geçilir, tamamı
+// sessiz kalmadan sonuna kadar okunur).
+async function fetchSurahAyahs(surahNum){
+  if(_surahAyahCache[surahNum])return _surahAyahCache[surahNum];
+  const r=await fetch(`https://api.alquran.cloud/v1/surah/${surahNum}/ar.alafasy`);
+  if(!r.ok)throw new Error('http '+r.status);
+  const json=await r.json();
+  const ayahs=(json.data&&json.data.ayahs)||[];
+  const list=ayahs.map(a=>({
+    n:a.numberInSurah,
+    url:a.audio||`https://cdn.islamic.network/quran/audio/128/ar.alafasy/${a.number}.mp3`
+  }));
+  if(list.length)_surahAyahCache[surahNum]=list;
+  return list;
+}
+function playOkuQueueStep(){
+  const status=document.getElementById('oku-audio-status');
+  const btn=document.getElementById('oku-play-btn');
+  clearTimeout(_okuStallTimer);
+  if(_okuQueueIdx>=_okuQueue.length){stopOkuAudio();status.textContent='Tamamlandı ✅';return;}
+  const item=_okuQueue[_okuQueueIdx];
+  status.textContent=`Ayet ${item.n}/${_okuQueue.length} okunuyor 🎧`;
+  btn.disabled=false;
+  btn.innerHTML='<i class="fa-solid fa-pause"></i> Durdur';
+  if(_okuAudio){_okuAudio.onended=null;_okuAudio.onerror=null;_okuAudio.pause();_okuAudio=null;}
+  _okuAudio=new Audio(item.url);
+  // 10 sn içinde çalmaya başlamazsa (yavaş/kopuk bağlantı) o ayeti
+  // atlayıp sıradakine geç — böylece tüm sure asla ortada takılı kalmaz.
+  _okuStallTimer=setTimeout(()=>{
+    status.textContent='Bağlantı yavaş, sıradaki ayete geçiliyor...';
+    _okuQueueIdx++;playOkuQueueStep();
+  },10000);
+  _okuAudio.oncanplay=()=>clearTimeout(_okuStallTimer);
+  _okuAudio.onended=()=>{clearTimeout(_okuStallTimer);_okuQueueIdx++;playOkuQueueStep();};
+  _okuAudio.onerror=()=>{clearTimeout(_okuStallTimer);_okuQueueIdx++;playOkuQueueStep();};
+  _okuAudio.play().catch(()=>{clearTimeout(_okuStallTimer);_okuQueueIdx++;playOkuQueueStep();});
 }
 function speakOku(){
   if(!('speechSynthesis' in window)){toast('Bu cihaz sesli okumayı desteklemiyor.',false);return;}
@@ -1864,10 +1911,12 @@ function speakOku(){
   speechSynthesis.cancel();speechSynthesis.speak(u);
 }
 function stopOkuAudio(){
-  if(_okuAudio){_okuAudio.pause();_okuAudio=null;}
+  clearTimeout(_okuStallTimer);
+  _okuQueue=[];_okuQueueIdx=0;
+  if(_okuAudio){_okuAudio.onended=null;_okuAudio.onerror=null;_okuAudio.pause();_okuAudio=null;}
   if('speechSynthesis' in window)speechSynthesis.cancel();
   _okuSpeaking=false;
-  const btn=document.getElementById('oku-play-btn');if(btn)btn.innerHTML='<i class="fa-solid fa-volume-high"></i> Sesli Oku';
+  const btn=document.getElementById('oku-play-btn');if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-volume-high"></i> Sesli Oku';}
   const status=document.getElementById('oku-audio-status');if(status)status.textContent='';
 }
 
