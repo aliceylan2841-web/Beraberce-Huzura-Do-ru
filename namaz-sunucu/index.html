@@ -1226,7 +1226,7 @@ const MOT={
 // ═══════════════════════════════════════════
 let S={name:'',city:'',lat:null,lon:null,times:{},done:{},
   alarms:{sabah:true,ogle:true,ikindi:true,aksam:true,yatsi:true},
-  cfg:{alarm:true,imsak:true,early:10,sound:'hicaz',method:'diyanet',theme:'dark',vibrate:true},
+  cfg:{alarm:true,imsak:true,early:10,sound:'ezan_hicaz',method:'diyanet',theme:'dark',vibrate:true},
   groups:[],sozler:[],curGroup:null};
 let alarmLoop=null,vibrateLoop=null,schedIds=[],selEmoVal='🕌',orientFn=null,heading=0,qibla=0;
 
@@ -2326,29 +2326,11 @@ function renderStats(){
     <div class="stat-card"><div class="stat-val" style="color:var(--gold)">🔥${myDoneToday>=5?'5':myDoneToday>=4?'4':myDoneToday>=2?'2':'1'}</div><div class="stat-lbl">Günlük Seri</div></div>
   `;
 
-  // Üye başarı tablosu
-  const bw=document.getElementById('bars-wrap'),bd=document.getElementById('bars-days');
-  bw.innerHTML='';bd.innerHTML='';
-
   // Her üye için bugün kılınan vakit sayısı
   const sorted=[...g.members].sort((a,b)=>{
     const an=PK.filter(k=>a.done&&a.done[k]).length;
     const bn=PK.filter(k=>b.done&&b.done[k]).length;
     return bn-an;
-  });
-
-  sorted.forEach(m=>{
-    const n=PK.filter(k=>m.done&&m.done[k]).length;
-    const pct=Math.round(n/5*100);
-    const ac=avC(m.name);
-    const bc=document.createElement('div');
-    bc.className='bar-col';
-    bc.innerHTML=`<div class="bar${m.isMe?' today':''}" style="height:${Math.max(4,Math.round(n/5*62))}px;background:${m.isMe?'var(--green)':ac.cl};opacity:${m.isMe?1:0.7}"></div>`;
-    bw.appendChild(bc);
-    const dc=document.createElement('div');
-    dc.className='bar-col';
-    dc.innerHTML=`<div class="bar-day" style="${m.isMe?'color:var(--green);font-weight:900':''}" title="${m.name}">${initials(m.name)}</div>`;
-    bd.appendChild(dc);
   });
 
   // Vakit bazlı istatistik
@@ -2513,11 +2495,6 @@ function copyInviteCode(){
   const code=g.inviteCode||'——';
   if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>toast('Davet kodu kopyalandı: '+code+' 🔑'));}
   else{toast('Davet kodu: '+code);}
-}
-
-function copyInvite(){
-  // Grup detay sayfasındaki davet butonu
-  openAddMember();
 }
 
 function shareInvite(){
@@ -2821,8 +2798,6 @@ const SOUNDS = [
   { id: 'silent',       name: 'Sessiz',             sub: 'Yalnız görsel uyarı',   ico: '🔕' }
 ];
 
-let alarmLoop = null;
-
 // ── Web Audio API ile Canlı Ses Üreteci ─────────────────────
 function generateAudio(type) {
   if (type === 'silent') return;
@@ -2924,14 +2899,48 @@ function generateAudio(type) {
 }
 
 // ── Sesi Çalma Ve Önizleme ──────────────────────────────────
+let _customAudioEl = null;
+const CUSTOM_SOUND_KEY = 'cm6_custom_sound';
+
+function stopCustomAudio() {
+  if (_customAudioEl) {
+    try { _customAudioEl.pause(); _customAudioEl.currentTime = 0; } catch (e) {}
+    _customAudioEl = null;
+  }
+}
+
 function stopAllAudio() {
   if (alarmLoop) { clearInterval(alarmLoop); alarmLoop = null; }
+  stopCustomAudio();
+}
+
+function getCustomSound() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_SOUND_KEY) || 'null'); }
+  catch (e) { return null; }
+}
+
+function playCustomAudio(loop) {
+  const cs = getCustomSound();
+  if (!cs) {
+    if (typeof toast === 'function') toast('Önce bir ses dosyası yükleyin', 'fa-triangle-exclamation');
+    return false;
+  }
+  stopCustomAudio();
+  _customAudioEl = new Audio(cs.data);
+  _customAudioEl.loop = !!loop;
+  _customAudioEl.play().catch(() => {});
+  return true;
 }
 
 function previewSound(type) {
   stopAllAudio();
   if (type === 'silent') {
     if (typeof toast === 'function') toast('Sessiz mod — Yalnızca görsel uyarı', 'fa-volume-xmark');
+    return;
+  }
+  if (type === 'custom') {
+    const cs = getCustomSound();
+    if (playCustomAudio(false) && typeof toast === 'function') toast('🎵 ' + (cs ? cs.name : 'Özel Ses') + ' çalınıyor');
     return;
   }
   generateAudio(type);
@@ -2943,12 +2952,81 @@ function playSound(type) {
   stopAllAudio();
   if (type === 'silent') return;
 
+  if (type === 'custom') {
+    // Kendi yüklediği ses bulunamazsa varsayılan ezana geri düş
+    if (!playCustomAudio(true)) playSound('ezan_hicaz');
+    return;
+  }
+
   const duration = generateAudio(type);
   
   // Kısa uyarı sesleri dışındakileri döngüye al
   if (!['bip_dijital', 'su_damlasi', 'soft_chime', 'tekbir_ton', 'ney_kisa'].includes(type)) {
     alarmLoop = setInterval(() => generateAudio(type), (duration || 3000) + 1500);
   }
+}
+
+// ── Kendi Sesini Yükleme / Test / Kaldırma ───────────────────
+function _setCustomSoundRowUI(name) {
+  const row = document.getElementById('custom-audio-row');
+  const nameEl = document.getElementById('custom-audio-name');
+  if (row) row.style.display = name ? 'flex' : 'none';
+  if (nameEl) nameEl.textContent = name || '';
+}
+
+function loadCustomSound(input) {
+  const file = input && input.files && input.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('audio/')) {
+    if (typeof toast === 'function') toast('Lütfen bir ses dosyası seçin (MP3, WAV, OGG)', 'fa-triangle-exclamation');
+    input.value = '';
+    return;
+  }
+  const MAX_SIZE = 2 * 1024 * 1024; // 2MB — tarayıcı depolama (localStorage) sınırını aşmamak için
+  if (file.size > MAX_SIZE) {
+    if (typeof toast === 'function') toast('Ses dosyası çok büyük (en fazla 2MB)', 'fa-triangle-exclamation');
+    input.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      localStorage.setItem(CUSTOM_SOUND_KEY, JSON.stringify({ name: file.name, data: reader.result }));
+    } catch (e) {
+      if (typeof toast === 'function') toast('Ses kaydedilemedi (depolama alanı dolu)', 'fa-triangle-exclamation');
+      input.value = '';
+      return;
+    }
+    if (window.S && S.cfg) { S.cfg.sound = 'custom'; if (typeof save === 'function') save(); }
+    _setCustomSoundRowUI(file.name);
+    if (typeof renderSoundGrid === 'function') renderSoundGrid();
+    if (typeof toast === 'function') toast('🎵 ' + file.name + ' yüklendi');
+    input.value = '';
+  };
+  reader.onerror = () => { if (typeof toast === 'function') toast('Ses dosyası okunamadı', 'fa-triangle-exclamation'); };
+  reader.readAsDataURL(file);
+}
+
+function testCustomSound() {
+  stopAllAudio();
+  const cs = getCustomSound();
+  if (!cs) { if (typeof toast === 'function') toast('Önce bir ses dosyası yükleyin', 'fa-triangle-exclamation'); return; }
+  playCustomAudio(false);
+  if (typeof toast === 'function') toast('🎵 ' + cs.name + ' çalınıyor');
+}
+
+function removeCustomSound() {
+  stopAllAudio();
+  localStorage.removeItem(CUSTOM_SOUND_KEY);
+  _setCustomSoundRowUI(null);
+  if (window.S && S.cfg && S.cfg.sound === 'custom') {
+    S.cfg.sound = 'ezan_hicaz';
+    if (typeof save === 'function') save();
+  }
+  if (typeof renderSoundGrid === 'function') renderSoundGrid();
+  if (typeof toast === 'function') toast('Özel ses kaldırıldı');
 }
 
 // ── Ses Seçim Izgarasını Ekrana Çizme ───────────────────────
@@ -2972,10 +3050,17 @@ function renderSoundGrid() {
   });
 
   const lbl = document.getElementById('sel-sound-lbl');
+  const cs = getCustomSound();
   if (lbl) {
-    const s = SOUNDS.find(x => x.id === cur);
-    lbl.textContent = 'Seçili: ' + (s ? s.name : 'Hicaz Makamı Ezan');
+    if (cur === 'custom') {
+      lbl.textContent = 'Seçili: ' + (cs ? cs.name : 'Özel Ses');
+    } else {
+      const s = SOUNDS.find(x => x.id === cur);
+      lbl.textContent = 'Seçili: ' + (s ? s.name : 'Hicaz Makamı Ezan');
+    }
   }
+  // Sayfa yeniden çizildiğinde yüklü özel ses satırını senkronize et
+  _setCustomSoundRowUI(cs ? cs.name : null);
 }
 
 function selectSound(id) {
@@ -3079,11 +3164,6 @@ function saveSettings(){
   save();render();renderGroups();toast('Ayarlar kaydedildi!');
 }
 
-// ═══════════════════════════════════════════
-// MODALS & UTILS
-// ═══════════════════════════════════════════
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
 // ═══════════════════════════════════════════
 // HİCRİ TARİH
 // ═══════════════════════════════════════════
