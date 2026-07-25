@@ -737,9 +737,13 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
               <input type="file" id="sound-file-inp" accept="audio/*" style="display:none" onchange="loadCustomSound(this)">
             </label>
             <div id="custom-audio-row" style="display:none;width:100%;align-items:center;gap:8px;flex-wrap:wrap">
-              <div id="custom-audio-name" style="font-size:11px;color:var(--green);font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+              <div style="width:100%;display:flex;align-items:center;gap:6px;min-width:0">
+                <div id="custom-audio-name" style="font-size:11px;color:var(--green);font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+                <span id="custom-audio-status" style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:99px;white-space:nowrap"></span>
+              </div>
               <button onclick="testCustomSound()" style="background:rgba(61,220,132,.12);border:1px solid rgba(61,220,132,.28);border-radius:8px;color:var(--green);font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 11px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-play"></i> Dinle</button>
-              <button onclick="removeCustomSound()" style="background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);border-radius:8px;color:var(--red);font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 9px;cursor:pointer"><i class="fa-solid fa-trash"></i></button>
+              <button id="custom-audio-save-btn" onclick="saveCustomSound()" style="display:none;background:rgba(232,197,71,.15);border:1px solid rgba(232,197,71,.35);border-radius:8px;color:var(--gold);font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 11px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
+              <button id="custom-audio-remove-btn" onclick="removeCustomSound()" style="background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);border-radius:8px;color:var(--red);font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 9px;cursor:pointer"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
           <div class="sr"><div class="sr-ico" style="background:rgba(239,68,68,.1);color:#f87171"><i class="fa-solid fa-bell-ring"></i></div><div class="sr-info"><div class="t">Alarm Testi</div><div class="s">Şu anki sesi dene</div></div><button style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:8px;color:#f87171;font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 11px;cursor:pointer;" onclick="testAlarm()">Test</button></div>
@@ -2919,14 +2923,14 @@ function getCustomSound() {
   catch (e) { return null; }
 }
 
-function playCustomAudio(loop) {
-  const cs = getCustomSound();
-  if (!cs) {
+function playCustomAudio(loop, dataUrl) {
+  const src = dataUrl || (getCustomSound() || {}).data;
+  if (!src) {
     if (typeof toast === 'function') toast('Önce bir ses dosyası yükleyin', 'fa-triangle-exclamation');
     return false;
   }
   stopCustomAudio();
-  _customAudioEl = new Audio(cs.data);
+  _customAudioEl = new Audio(src);
   _customAudioEl.loop = !!loop;
   _customAudioEl.play().catch(() => {});
   return true;
@@ -2966,12 +2970,36 @@ function playSound(type) {
   }
 }
 
-// ── Kendi Sesini Yükleme / Test / Kaldırma ───────────────────
-function _setCustomSoundRowUI(name) {
+// ── Kendi Sesini Yükleme / Test / Kaydetme / Kaldırma ────────
+// Dosya seçilince hemen kaydedilmez; kullanıcı "Kaydet"e basana kadar
+// yalnızca bellekte (bekleyen/pending) tutulur.
+let _pendingCustomSound = null; // {name, data} — henüz kaydedilmemiş seçim
+
+function _setCustomSoundRowUI(state, name) {
+  // state: 'none' | 'pending' | 'saved'
   const row = document.getElementById('custom-audio-row');
   const nameEl = document.getElementById('custom-audio-name');
-  if (row) row.style.display = name ? 'flex' : 'none';
+  const statusEl = document.getElementById('custom-audio-status');
+  const saveBtn = document.getElementById('custom-audio-save-btn');
+  const removeBtn = document.getElementById('custom-audio-remove-btn');
+
+  if (row) row.style.display = state === 'none' ? 'none' : 'flex';
   if (nameEl) nameEl.textContent = name || '';
+  if (saveBtn) saveBtn.style.display = state === 'pending' ? 'inline-flex' : 'none';
+  if (removeBtn) removeBtn.title = state === 'pending' ? 'Seçimi iptal et' : 'Sesi kaldır';
+  if (statusEl) {
+    if (state === 'pending') {
+      statusEl.textContent = 'Kaydedilmedi';
+      statusEl.style.background = 'rgba(255,184,48,.15)';
+      statusEl.style.color = 'var(--amber)';
+    } else if (state === 'saved') {
+      statusEl.textContent = 'Kaydedildi ✓';
+      statusEl.style.background = 'rgba(61,220,132,.15)';
+      statusEl.style.color = 'var(--green)';
+    } else {
+      statusEl.textContent = '';
+    }
+  }
 }
 
 function loadCustomSound(input) {
@@ -2992,17 +3020,10 @@ function loadCustomSound(input) {
 
   const reader = new FileReader();
   reader.onload = () => {
-    try {
-      localStorage.setItem(CUSTOM_SOUND_KEY, JSON.stringify({ name: file.name, data: reader.result }));
-    } catch (e) {
-      if (typeof toast === 'function') toast('Ses kaydedilemedi (depolama alanı dolu)', 'fa-triangle-exclamation');
-      input.value = '';
-      return;
-    }
-    if (window.S && S.cfg) { S.cfg.sound = 'custom'; if (typeof save === 'function') save(); }
-    _setCustomSoundRowUI(file.name);
-    if (typeof renderSoundGrid === 'function') renderSoundGrid();
-    if (typeof toast === 'function') toast('🎵 ' + file.name + ' yüklendi');
+    // Henüz kaydedilmiyor — sadece bekleyen seçim olarak tutuluyor
+    _pendingCustomSound = { name: file.name, data: reader.result };
+    _setCustomSoundRowUI('pending', file.name);
+    if (typeof toast === 'function') toast('🎵 ' + file.name + ' seçildi — kaydetmek için "Kaydet"e bas');
     input.value = '';
   };
   reader.onerror = () => { if (typeof toast === 'function') toast('Ses dosyası okunamadı', 'fa-triangle-exclamation'); };
@@ -3011,16 +3032,47 @@ function loadCustomSound(input) {
 
 function testCustomSound() {
   stopAllAudio();
+  // Önce bekleyen (henüz kaydedilmemiş) seçim varsa onu dinlet
+  if (_pendingCustomSound) {
+    playCustomAudio(false, _pendingCustomSound.data);
+    if (typeof toast === 'function') toast('🎵 ' + _pendingCustomSound.name + ' çalınıyor (kaydedilmedi)');
+    return;
+  }
   const cs = getCustomSound();
   if (!cs) { if (typeof toast === 'function') toast('Önce bir ses dosyası yükleyin', 'fa-triangle-exclamation'); return; }
   playCustomAudio(false);
   if (typeof toast === 'function') toast('🎵 ' + cs.name + ' çalınıyor');
 }
 
+function saveCustomSound() {
+  if (!_pendingCustomSound) return;
+  try {
+    localStorage.setItem(CUSTOM_SOUND_KEY, JSON.stringify(_pendingCustomSound));
+  } catch (e) {
+    if (typeof toast === 'function') toast('Ses kaydedilemedi (depolama alanı dolu)', 'fa-triangle-exclamation');
+    return;
+  }
+  const name = _pendingCustomSound.name;
+  _pendingCustomSound = null;
+  if (window.S && S.cfg) { S.cfg.sound = 'custom'; if (typeof save === 'function') save(); }
+  _setCustomSoundRowUI('saved', name);
+  if (typeof renderSoundGrid === 'function') renderSoundGrid();
+  if (typeof toast === 'function') toast('✅ ' + name + ' kaydedildi ve alarm sesi olarak ayarlandı');
+}
+
 function removeCustomSound() {
   stopAllAudio();
+  // Bekleyen (kaydedilmemiş) bir seçim varsa sadece onu iptal et
+  if (_pendingCustomSound) {
+    _pendingCustomSound = null;
+    const cs = getCustomSound();
+    _setCustomSoundRowUI(cs ? 'saved' : 'none', cs ? cs.name : null);
+    if (typeof toast === 'function') toast('Seçim iptal edildi');
+    return;
+  }
+  // Aksi halde daha önce kaydedilmiş özel sesi tamamen kaldır
   localStorage.removeItem(CUSTOM_SOUND_KEY);
-  _setCustomSoundRowUI(null);
+  _setCustomSoundRowUI('none', null);
   if (window.S && S.cfg && S.cfg.sound === 'custom') {
     S.cfg.sound = 'ezan_hicaz';
     if (typeof save === 'function') save();
@@ -3059,8 +3111,13 @@ function renderSoundGrid() {
       lbl.textContent = 'Seçili: ' + (s ? s.name : 'Hicaz Makamı Ezan');
     }
   }
-  // Sayfa yeniden çizildiğinde yüklü özel ses satırını senkronize et
-  _setCustomSoundRowUI(cs ? cs.name : null);
+  // Sayfa yeniden çizildiğinde bekleyen bir seçim varsa onu, yoksa kaydedilmiş
+  // özel sesin durumunu senkronize et.
+  if (_pendingCustomSound) {
+    _setCustomSoundRowUI('pending', _pendingCustomSound.name);
+  } else {
+    _setCustomSoundRowUI(cs ? 'saved' : 'none', cs ? cs.name : null);
+  }
 }
 
 function selectSound(id) {
