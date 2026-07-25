@@ -2798,312 +2798,190 @@ function quickDeleteGroup(gid){
 }
 function renderGroupActions(gid){openGroup(gid);}
 
-// ═══════════════════════════════════════════
-// SES SİSTEMİ
-// ═══════════════════════════════════════════
-const SOUNDS=[
-  {id:'hicaz',  name:'Hicaz Makamı',   sub:'Klasik ezan makamı', ico:'🕌'},
-  {id:'usshak', name:'Uşşak Makamı',   sub:'Duygusal ve derin',  ico:'🌙'},
-  {id:'rast',   name:'Rast Makamı',    sub:'Huzurlu sabah tonu', ico:'🌅'},
-  {id:'saba',   name:'Saba Makamı',    sub:'Mekke ezanı tonu',   ico:'🕋'},
-  {id:'ney',    name:'Ney Taksimi',    sub:'Tasavvuf / sufi',    ico:'🎵'},
-  {id:'ud',     name:'Ud Teli',        sub:'Telli enstrüman',    ico:'🎸'},
-  {id:'gentle', name:'Yumuşak Çan',    sub:'Hafif hatırlatma',   ico:'🔔'},
-  {id:'silent', name:'Sessiz',         sub:'Yalnız görsel uyarı',ico:'🔕'},
+// ═══════════════════════════════════════════════════════════
+// KODA GÖMÜLÜ SES SİSTEMİ (HARİCİ DOSYA / KLASÖR GEREKTİRMEZ)
+// ═══════════════════════════════════════════════════════════
+
+const SOUNDS = [
+  // 🕌 EZAN VE MAKAM SESLERİ
+  { id: 'ezan_hicaz',   name: 'Hicaz Makamı Ezan',  sub: 'Klasik ezan tonu',      ico: '🕌' },
+  { id: 'ezan_saba',    name: 'Saba Makamı Ezan',   sub: 'Hüzünlü/Derin ezan',    ico: '🌅' },
+  { id: 'ezan_usshak',  name: 'Uşşak Makamı Ezan',  sub: 'Duygusal ton',          ico: '🌙' },
+
+  // 🎵 NEY VE TASAVVUF TONLARI
+  { id: 'ney_taksim',   name: 'Ney Taksimi',        sub: 'Sufi ney üflemesi',     ico: '🎵' },
+  { id: 'ney_kisa',     name: 'Kısa Ney Tonu',      sub: '3 sn ney sesi',         ico: '🌾' },
+
+  // 🔔 UYARICI KISA BİLDİRİMLER
+  { id: 'tekbir_ton',   name: 'Kısa Tekbir Tonu',   sub: 'Makamlı uyarı',         ico: '☝️' },
+  { id: 'bip_dijital',  name: 'Dijital Bip',        sub: 'Net saat uyarısı',      ico: '⏰' },
+  { id: 'soft_chime',   name: 'Yumuşak Çan',        sub: 'Hafif hatırlatma',      ico: '🔔' },
+  { id: 'su_damlasi',   name: 'Su Damlası',          sub: 'Doğal uyarı tonu',      ico: '💧' },
+
+  { id: 'silent',       name: 'Sessiz',             sub: 'Yalnız görsel uyarı',   ico: '🔕' }
 ];
 
-let customAudioUrl=null,customAudioName=null,customAudio=null,previewAudio=null;
+let alarmLoop = null;
 
-// ── Makam tanımları ────────────────────────
-// Her nota: {f:Hz, d:süre(s), v:vibrato?, g:glide?}
-const MAQAM={
+// ── Web Audio API ile Canlı Ses Üreteci ─────────────────────
+function generateAudio(type) {
+  if (type === 'silent') return;
 
-  hicaz:{ // Hicaz — Re Mi♭ Fi# Sol La Si♭ Do Re
-    bpm:52,
-    phrases:[
-      // Cümle 1: yükselen
-      [{f:293.66,d:.55},{f:311.13,d:.3},{f:369.99,d:.65,v:.7},{f:392,d:.45},{f:0,d:.18}],
-      // Cümle 2: orta
-      [{f:440,d:.5},{f:415.3,d:.3},{f:392,d:.6,v:.5},{f:369.99,d:.4},{f:311.13,d:.3},{f:0,d:.2}],
-      // Cümle 3: alçalan karar
-      [{f:369.99,d:.5},{f:349.23,d:.3},{f:311.13,d:.7,v:.8},{f:293.66,d:.9}],
-    ],
-    type:'sine'
-  },
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
 
-  usshak:{ // Uşşak — Re Mi♭ Fa Sol La Si♭ Do Re  (küçük ikili karakteristik)
-    bpm:46,
-    phrases:[
-      [{f:220,d:.6},{f:246.94,d:.45,v:.4},{f:261.63,d:.55},{f:293.66,d:.7,v:.6},{f:0,d:.22}],
-      [{f:329.63,d:.5},{f:311.13,d:.35},{f:293.66,d:.6,v:.5},{f:261.63,d:.4},{f:0,d:.2}],
-      [{f:246.94,d:.55},{f:220,d:.45,v:.6},{f:196,d:.5},{f:220,d:1.1,v:.9}],
-    ],
-    type:'sine'
-  },
+    // 1. DİJİTAL BİP SESİ
+    if (type === 'bip_dijital') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.setValueAtTime(1046.50, now); // C6 notası
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 0.15);
+      return 300;
+    }
 
-  rast:{ // Rast — Do Re Mi♭ Fa Sol La Si♭ Do (sakin, parlak)
-    bpm:56,
-    phrases:[
-      [{f:261.63,d:.5},{f:293.66,d:.45},{f:329.63,d:.6,v:.4},{f:349.23,d:.5},{f:0,d:.2}],
-      [{f:392,d:.55},{f:440,d:.4,v:.5},{f:392,d:.45},{f:349.23,d:.55},{f:329.63,d:.4},{f:0,d:.18}],
-      [{f:293.66,d:.5},{f:261.63,d:.45,v:.6},{f:246.94,d:.4},{f:261.63,d:1.0,v:.8}],
-    ],
-    type:'sine'
-  },
+    // 2. SU DAMLASI SESİ
+    if (type === 'su_damlasi') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(1800, now + 0.08); // Hızlı frekans yükselmesi
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 0.12);
+      return 300;
+    }
 
-  saba:{ // Saba — Re Mi♭ Fa♭ Sol La♭ Si♭ Do Re (hüzünlü, otantik)
-    bpm:44,
-    phrases:[
-      [{f:293.66,d:.6},{f:311.13,d:.4},{f:329.63,d:.3},{f:277.18,d:.7,v:.6},{f:0,d:.25}],
-      [{f:293.66,d:.5},{f:349.23,d:.4},{f:392,d:.6,v:.5},{f:369.99,d:.4},{f:349.23,d:.5},{f:0,d:.2}],
-      [{f:329.63,d:.4},{f:311.13,d:.5},{f:293.66,d:.45,v:.7},{f:277.18,d:.4},{f:261.63,d:.4},{f:293.66,d:.9,v:.8}],
-    ],
-    type:'sine'
-  },
-
-  ney:{ // Ney — üfleme, nefes sesi, sufi
-    bpm:38,
-    phrases:[
-      [{f:174.61,d:.8,v:.3},{f:0,d:.12},{f:196,d:.6,v:.4},{f:220,d:.7,v:.5},{f:0,d:.25}],
-      [{f:246.94,d:.7,v:.5},{f:220,d:.55,v:.4},{f:196,d:.75,v:.3},{f:0,d:.3}],
-      [{f:185,d:.6,v:.4},{f:174.61,d:.5,v:.5},{f:164.81,d:.7,v:.3},{f:174.61,d:1.2,v:.6}],
-    ],
-    type:'triangle',breathNoise:true
-  },
-
-  ud:{ // Ud — telli, parmak tırnak sesi (kısa tiz + uzun rezonans)
-    bpm:60,
-    phrases:[
-      [{f:196,d:.12,pluck:true},{f:246.94,d:.12,pluck:true},{f:293.66,d:.2,pluck:true},{f:349.23,d:.35,pluck:true},{f:392,d:.5,pluck:true},{f:0,d:.3}],
-      [{f:440,d:.15,pluck:true},{f:392,d:.12,pluck:true},{f:349.23,d:.2,pluck:true},{f:329.63,d:.35,pluck:true},{f:0,d:.25}],
-      [{f:293.66,d:.15,pluck:true},{f:261.63,d:.12,pluck:true},{f:246.94,d:.5,pluck:true},{f:220,d:.8,pluck:true}],
-    ],
-    type:'sawtooth'
-  },
-
-  gentle:{ // Yumuşak çan / gong
-    bpm:72,
-    phrases:[
-      [{f:528,d:.5,bell:true},{f:0,d:.2},{f:594,d:.45,bell:true},{f:0,d:.18},{f:660,d:.6,bell:true},{f:0,d:.25}],
-      [{f:594,d:.45,bell:true},{f:528,d:.7,bell:true}],
-    ],
-    type:'sine'
-  },
-};
-
-function playMaqam(id,loop){
-  if(id==='silent')return 0;
-  const m=MAQAM[id]||MAQAM.hicaz;
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const masterGain=ctx.createGain();masterGain.gain.value=0.42;
-    // Reverb (konvolüsyon yerine basit delay+feedback)
-    const delay=ctx.createDelay(0.4);delay.delayTime.value=0.22;
-    const fb=ctx.createGain();fb.gain.value=0.28;
-    const wet=ctx.createGain();wet.gain.value=0.22;
-    delay.connect(fb);fb.connect(delay);delay.connect(wet);wet.connect(ctx.destination);
-    masterGain.connect(ctx.destination);masterGain.connect(delay);
-
-    let t=ctx.currentTime+0.05;
-
-    m.phrases.forEach(phrase=>{
-      phrase.forEach(note=>{
-        if(!note.f){t+=note.d;return;}
-        if(note.pluck){
-          // Ud teli: kısa atak + uzun exponential decay + harmonik
-          [1,2,3].forEach((harm,hi)=>{
-            const o=ctx.createOscillator();const g=ctx.createGain();
-            o.type=hi===0?'sawtooth':'sine';
-            o.frequency.value=note.f*harm;
-            const harmGain=[0.5,0.25,0.1][hi];
-            g.gain.setValueAtTime(0,t);
-            g.gain.linearRampToValueAtTime(harmGain,t+0.008);
-            g.gain.exponentialRampToValueAtTime(0.001,t+note.d*3.5);
-            o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+note.d*3.5+0.1);
-          });
-          t+=note.d;return;
-        }
-        if(note.bell){
-          // Çan: hızlı atak çok yavaş decay, inharmonik
-          [1,2.756,5.404].forEach((ratio,hi)=>{
-            const o=ctx.createOscillator();const g=ctx.createGain();
-            o.type='sine';o.frequency.value=note.f*ratio;
-            const hv=[0.4,0.15,0.05][hi];
-            g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(hv,t+0.004);
-            g.gain.exponentialRampToValueAtTime(0.001,t+note.d*4);
-            o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+note.d*4+0.05);
-          });
-          t+=note.d;return;
-        }
-
-        // Normal nota: sin/triangle + harmonik 2+3
-        const osc=ctx.createOscillator();const g=ctx.createGain();
-        osc.type=m.type||'sine';osc.frequency.setValueAtTime(note.f,t);
-
-        // Vibrato
-        if(note.v&&note.v>0){
-          const vib=ctx.createOscillator();const vibG=ctx.createGain();
-          vib.frequency.value=5.2+Math.random()*0.5;vibG.gain.value=0;
-          const vDelay=note.d*0.25;
-          vibG.gain.setValueAtTime(0,t+vDelay);
-          vibG.gain.linearRampToValueAtTime(note.f*0.012*note.v,t+vDelay+0.12);
-          vibG.gain.setValueAtTime(note.f*0.012*note.v,t+note.d*0.8);
-          vibG.gain.linearRampToValueAtTime(0,t+note.d);
-          vib.connect(vibG);vibG.connect(osc.frequency);
-          vib.start(t);vib.stop(t+note.d+0.05);
-        }
-
-        // Ney nefes gürültüsü
-        if(m.breathNoise){
-          const buf=ctx.createBuffer(1,ctx.sampleRate*note.d,ctx.sampleRate);
-          const data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*0.04;
-          const ns=ctx.createBufferSource();ns.buffer=buf;
-          const nf=ctx.createBiquadFilter();nf.type='bandpass';nf.frequency.value=note.f*1.6;nf.Q.value=2;
-          const ng=ctx.createGain();ng.gain.value=0.18;
-          ns.connect(nf);nf.connect(ng);ng.connect(masterGain);ns.start(t);
-        }
-
-        g.gain.setValueAtTime(0,t);
-        g.gain.linearRampToValueAtTime(0.38,t+Math.min(0.08,note.d*0.15));
-        g.gain.setValueAtTime(0.38,t+note.d*0.72);
-        g.gain.exponentialRampToValueAtTime(0.001,t+note.d+0.05);
-        osc.connect(g);g.connect(masterGain);osc.start(t);osc.stop(t+note.d+0.1);
-
-        // 2. harmonik (yarım ses tını zenginleştirme)
-        const o2=ctx.createOscillator();const g2=ctx.createGain();
-        o2.type='sine';o2.frequency.value=note.f*2;
-        g2.gain.setValueAtTime(0,t);g2.gain.linearRampToValueAtTime(0.06,t+0.05);
-        g2.gain.exponentialRampToValueAtTime(0.001,t+note.d*0.8);
-        o2.connect(g2);g2.connect(masterGain);o2.start(t);o2.stop(t+note.d+0.05);
-
-        t+=note.d+0.04;
+    // 3. YUMUŞAK ÇAN / GONG SESİ
+    if (type === 'soft_chime') {
+      [528, 660, 792].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, now + i * 0.15);
+        gain.gain.linearRampToValueAtTime(0.3, now + i * 0.15 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 1.2);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 1.2);
       });
-      t+=0.15; // cümleler arası nefes
+      return 1500;
+    }
+
+    // 4. KISA TEKBİR TONU
+    if (type === 'tekbir_ton') {
+      const notes = [293.66, 349.23, 329.63, 293.66]; // Re - Fa - Mi - Re
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, now + i * 0.3);
+        gain.gain.linearRampToValueAtTime(0.35, now + i * 0.3 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.3 + 0.35);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now + i * 0.3); osc.stop(now + i * 0.3 + 0.38);
+      });
+      return 1500;
+    }
+
+    // 5. NEY VE EZAN MAKAM TONLARI (Sentetik Akustik)
+    const sequences = {
+      'ney_kisa':    [{f:174.61,d:.8},{f:196,d:.6},{f:220,d:1.0}],
+      'ney_taksim': [{f:174.61,d:.8},{f:196,d:.6},{f:220,d:.7},{f:246.94,d:.7},{f:220,d:1.2}],
+      'ezan_hicaz': [{f:293.66,d:.5},{f:311.13,d:.3},{f:369.99,d:.65},{f:392,d:.45},{f:311.13,d:.7},{f:293.66,d:1.0}],
+      'ezan_saba':  [{f:293.66,d:.6},{f:311.13,d:.4},{f:277.18,d:.7},{f:261.63,d:.4},{f:293.66,d:1.2}],
+      'ezan_usshak':[{f:220,d:.6},{f:246.94,d:.45},{f:293.66,d:.7},{f:246.94,d:.55},{f:220,d:1.1}]
+    };
+
+    const seq = sequences[type] || sequences['ezan_hicaz'];
+    let t = now;
+
+    seq.forEach(note => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type.includes('ney') ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(note.f, t);
+
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.35, t + 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + note.d);
+
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t); osc.stop(t + note.d + 0.05);
+      t += note.d + 0.05;
     });
 
-    const totalMs=(t-ctx.currentTime)*1000+600;
-    return totalMs;
-  }catch(e){return 4000;}
-}
+    return (t - now) * 1000;
 
-function playSound(type){
-  if(alarmLoop)return;
-  if(type==='silent')return;
-  if(type==='custom'&&customAudioUrl){
-    const play=()=>{const a=new Audio(customAudioUrl);a.volume=0.85;a.play().catch(()=>{});};
-    play();alarmLoop=setInterval(play,6500);return;
+  } catch (e) {
+    console.error('Ses üretme hatası:', e);
+    return 2000;
   }
-  const dur=playMaqam(type);
-  alarmLoop=setInterval(()=>playMaqam(type),(dur||5000)+1000);
 }
 
-function previewSound(type){
-  if(previewAudio){previewAudio.pause();previewAudio=null;}
-  if(type==='silent'){toast('Sessiz modu — görsel uyarı','fa-volume-xmark');return;}
-  playMaqam(type);
-  const nm=SOUNDS.find(x=>x.id===type);
-  toast('🎵 '+(nm?nm.name:type)+' önizleniyor');
+// ── Sesi Çalma Ve Önizleme ──────────────────────────────────
+function stopAllAudio() {
+  if (alarmLoop) { clearInterval(alarmLoop); alarmLoop = null; }
 }
 
-function renderSoundGrid(){
-  const grid=document.getElementById('sound-grid');if(!grid)return;
-  grid.innerHTML='';
-  const cur=S.cfg.sound||'ezan1';
-  SOUNDS.forEach(s=>{
-    const div=document.createElement('div');
-    div.className='sound-opt'+(cur===s.id?' sel':'');
-    div.onclick=()=>selectSound(s.id);
-    div.innerHTML=`
+function previewSound(type) {
+  stopAllAudio();
+  if (type === 'silent') {
+    if (typeof toast === 'function') toast('Sessiz mod — Yalnızca görsel uyarı', 'fa-volume-xmark');
+    return;
+  }
+  generateAudio(type);
+  const nm = SOUNDS.find(x => x.id === type);
+  if (typeof toast === 'function') toast('🎵 ' + (nm ? nm.name : type) + ' çalınıyor');
+}
+
+function playSound(type) {
+  stopAllAudio();
+  if (type === 'silent') return;
+
+  const duration = generateAudio(type);
+  
+  // Kısa uyarı sesleri dışındakileri döngüye al
+  if (!['bip_dijital', 'su_damlasi', 'soft_chime', 'tekbir_ton', 'ney_kisa'].includes(type)) {
+    alarmLoop = setInterval(() => generateAudio(type), (duration || 3000) + 1500);
+  }
+}
+
+// ── Ses Seçim Izgarasını Ekrana Çizme ───────────────────────
+function renderSoundGrid() {
+  const grid = document.getElementById('sound-grid'); if (!grid) return;
+  grid.innerHTML = '';
+  const cur = (window.S && S.cfg && S.cfg.sound) ? S.cfg.sound : 'ezan_hicaz';
+
+  SOUNDS.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'sound-opt' + (cur === s.id ? ' sel' : '');
+    div.onclick = () => selectSound(s.id);
+    div.innerHTML = `
       <div class="sound-opt-check"><i class="fa-solid fa-check"></i></div>
       <div class="sound-opt-ico">${s.ico}</div>
       <div class="sound-opt-name">${s.name}</div>
       <div class="sound-opt-sub">${s.sub}</div>
       <i class="fa-solid fa-play play-ico"></i>`;
-    div.querySelector('.play-ico').addEventListener('click',e=>{e.stopPropagation();previewSound(s.id);});
+    div.querySelector('.play-ico').addEventListener('click', e => { e.stopPropagation(); previewSound(s.id); });
     grid.appendChild(div);
   });
-  // Özel ses varsa grid'e ekle
-  if(customAudioName){
-    const div=document.createElement('div');
-    const isCur=cur==='custom';
-    div.className='sound-opt'+(isCur?' sel':'');
-    div.onclick=()=>selectSound('custom');
-    div.innerHTML=`
-      <div class="sound-opt-check"><i class="fa-solid fa-check"></i></div>
-      <div class="sound-opt-ico">🎶</div>
-      <div class="sound-opt-name" style="font-size:10px">${customAudioName.length>14?customAudioName.slice(0,12)+'…':customAudioName}</div>
-      <div class="sound-opt-sub">Yüklenen ses</div>
-      <i class="fa-solid fa-play play-ico"></i>`;
-    div.querySelector('.play-ico').addEventListener('click',e=>{e.stopPropagation();testCustomSound();});
-    grid.appendChild(div);
+
+  const lbl = document.getElementById('sel-sound-lbl');
+  if (lbl) {
+    const s = SOUNDS.find(x => x.id === cur);
+    lbl.textContent = 'Seçili: ' + (s ? s.name : 'Hicaz Makamı Ezan');
   }
-  const lbl=document.getElementById('sel-sound-lbl');
-  if(lbl){const s=SOUNDS.find(x=>x.id===cur);lbl.textContent='Seçili: '+(cur==='custom'?customAudioName||'Kişisel Ses':s?s.name:'Klasik Ezan');}
 }
 
-function selectSound(id){
-  S.cfg.sound=id;save();renderSoundGrid();
-}
-
-// Özel ses yükleme
-function loadCustomSound(inp){
-  const file=inp.files[0];if(!file)return;
-  const maxMB=10;
-  if(file.size>maxMB*1024*1024){toast(`Dosya max ${maxMB}MB olabilir.`,false);inp.value='';return;}
-  const reader=new FileReader();
-  reader.onload=e=>{
-    customAudioUrl=e.target.result;
-    customAudioName=file.name.replace(/\.[^.]+$/,'');
-    // localStorage'a kaydet (base64)
-    try{localStorage.setItem('cm6_audio',customAudioUrl);localStorage.setItem('cm6_audio_name',customAudioName);}catch(e){toast('Ses kaydedilemedi, hafıza dolu.',false);}
-    showCustomAudioRow();
-    selectSound('custom');
-    renderSoundGrid();
-    toast('Ses yüklendi: '+customAudioName+' 🎵');
-  };
-  reader.readAsDataURL(file);
-}
-function showCustomAudioRow(){
-  const row=document.getElementById('custom-audio-row');
-  const nm=document.getElementById('custom-audio-name');
-  if(row){row.style.display='flex';}
-  if(nm&&customAudioName)nm.textContent=customAudioName;
-}
-function testCustomSound(){
-  if(!customAudioUrl){toast('Önce ses yükleyin.',false);return;}
-  if(previewAudio){previewAudio.pause();}
-  previewAudio=new Audio(customAudioUrl);previewAudio.volume=0.8;
-  previewAudio.play().catch(()=>toast('Ses çalınamadı.',false));
-}
-function removeCustomSound(){
-  customAudioUrl=null;customAudioName=null;
-  try{localStorage.removeItem('cm6_audio');localStorage.removeItem('cm6_audio_name');}catch(e){}
-  document.getElementById('custom-audio-row').style.display='none';
-  document.getElementById('sound-file-inp').value='';
-  if(S.cfg.sound==='custom'){S.cfg.sound='ezan1';save();}
-  renderSoundGrid();toast('Ses silindi.');
-}
-function loadCustomAudioFromStorage(){
-  try{
-    const url=localStorage.getItem('cm6_audio');
-    const name=localStorage.getItem('cm6_audio_name');
-    if(url&&name){customAudioUrl=url;customAudioName=name;showCustomAudioRow();}
-  }catch(e){}
-}
-
-// ─── renderSetPage'e ses grid'i ekle ───────
-const _origRenderSetPage=typeof renderSetPage==='function'?renderSetPage:null;
-function schedAlarms(){
-  schedIds.forEach(clearTimeout);schedIds=[];if(!S.cfg.alarm)return;
-  const earlyMs=S.cfg.early*60000;
-  const keys=[...PK];if(S.cfg.imsak)keys.unshift('imsak');
-  keys.forEach(k=>{
-    if(k!=='imsak'&&S.alarms[k]===false)return;
-    const t=S.times[k];if(!t||t==='--:--')return;
-    const[h,m]=t.split(':').map(Number);const td=new Date();td.setHours(h,m,0,0);
-    const diff=td.getTime()-earlyMs-Date.now();
-    if(diff>0&&diff<86400000)schedIds.push(setTimeout(()=>triggerAlarm(k,t),diff));
-  });
+function selectSound(id) {
+  if (window.S && S.cfg) S.cfg.sound = id;
+  if (typeof save === 'function') save();
+  renderSoundGrid();
 }
 // ═══════════════════════════════════════════
 // ALARM ZAMANLAMA
