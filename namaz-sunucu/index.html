@@ -188,10 +188,26 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
 .dlb{flex:1;font-size:9px;color:var(--t3);font-weight:700;text-align:center;}
 .dlb.fl{color:var(--green);}
 
-.imsak-row{background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.18);border-radius:12px;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-[data-theme="light"] .imsak-row{background:rgba(99,102,241,.06);}
-.imsak-row span{font-size:12px;font-weight:700;color:rgba(165,180,252,.8);}
-.imsak-row strong{font-size:14px;font-weight:900;color:#818cf8;}
+.ext-vk-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.ext-vk-card{position:relative;border-radius:18px;padding:13px 14px 12px;border:1px solid var(--border);overflow:hidden;transition:transform .15s;}
+.ext-vk-card:active{transform:scale(.98);}
+.ext-vk-card::after{content:'';position:absolute;top:-24px;right:-24px;width:78px;height:78px;border-radius:50%;pointer-events:none;}
+.ext-vk-card.imsak{background:linear-gradient(150deg,rgba(99,102,241,.16),rgba(99,102,241,.04) 65%);border-color:rgba(99,102,241,.28);}
+.ext-vk-card.imsak::after{background:radial-gradient(circle,rgba(99,102,241,.2),transparent 70%);}
+.ext-vk-card.gunes{background:linear-gradient(150deg,rgba(251,191,36,.18),rgba(251,191,36,.04) 65%);border-color:rgba(251,191,36,.3);}
+.ext-vk-card.gunes::after{background:radial-gradient(circle,rgba(251,191,36,.22),transparent 70%);}
+[data-theme="light"] .ext-vk-card.imsak{background:linear-gradient(150deg,rgba(99,102,241,.12),rgba(99,102,241,.02) 65%);}
+[data-theme="light"] .ext-vk-card.gunes{background:linear-gradient(150deg,rgba(251,191,36,.15),rgba(251,191,36,.02) 65%);}
+.ext-vk-top{display:flex;align-items:center;gap:7px;margin-bottom:11px;position:relative;z-index:1;}
+.ext-vk-ico{width:29px;height:29px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12.5px;flex-shrink:0;}
+.ext-vk-card.imsak .ext-vk-ico{background:rgba(99,102,241,.22);color:#818cf8;}
+.ext-vk-card.gunes .ext-vk-ico{background:rgba(251,191,36,.25);color:#f59e0b;}
+.ext-vk-lbl{font-size:11.5px;font-weight:800;color:var(--t1);}
+.ext-vk-time{font-size:23px;font-weight:900;color:var(--t1);letter-spacing:-.5px;line-height:1;position:relative;z-index:1;}
+.ext-vk-sub{font-size:10px;color:var(--t3);font-weight:700;margin-top:5px;position:relative;z-index:1;display:flex;align-items:center;gap:4px;}
+.ext-vk-sub i{font-size:8px;}
+.ext-vk-card.imsak .ext-vk-sub.now{color:#818cf8;}
+.ext-vk-card.gunes .ext-vk-sub.now{color:#f59e0b;}
 
 .pr-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
 .pr-row{display:flex;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:15px;padding:11px 13px;position:relative;overflow:hidden;transition:all .2s;}
@@ -601,7 +617,18 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
           <div class="dots" id="dots"></div>
           <div class="dlbs" id="dlbs"></div>
         </div>
-        <div class="imsak-row"><span><i class="fa-solid fa-moon" style="margin-right:5px"></i>İmsak · Sahur Sonu</span><strong id="imsak-t">—:—</strong></div>
+        <div class="ext-vk-grid">
+          <div class="ext-vk-card imsak">
+            <div class="ext-vk-top"><div class="ext-vk-ico"><i class="fa-solid fa-moon"></i></div><div class="ext-vk-lbl">İmsak</div></div>
+            <div class="ext-vk-time" id="imsak-t">—:—</div>
+            <div class="ext-vk-sub" id="imsak-sub"><i class="fa-solid fa-circle"></i> Sahur sonu</div>
+          </div>
+          <div class="ext-vk-card gunes">
+            <div class="ext-vk-top"><div class="ext-vk-ico"><i class="fa-solid fa-sun"></i></div><div class="ext-vk-lbl">Güneş</div></div>
+            <div class="ext-vk-time" id="gunes-t">—:—</div>
+            <div class="ext-vk-sub" id="gunes-sub"><i class="fa-solid fa-circle"></i> Doğuş vakti</div>
+          </div>
+        </div>
         <div class="pr-list" id="pr-list"></div>
         <div class="wm" style="margin-top:6px"><i class="fa-solid fa-star"></i> Acamay</div>
       </div>
@@ -737,13 +764,9 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
               <input type="file" id="sound-file-inp" accept="audio/*" style="display:none" onchange="loadCustomSound(this)">
             </label>
             <div id="custom-audio-row" style="display:none;width:100%;align-items:center;gap:8px;flex-wrap:wrap">
-              <div style="width:100%;display:flex;align-items:center;gap:6px;min-width:0">
-                <div id="custom-audio-name" style="font-size:11px;color:var(--green);font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
-                <span id="custom-audio-status" style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:99px;white-space:nowrap"></span>
-              </div>
+              <div id="custom-audio-name" style="font-size:11px;color:var(--green);font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
               <button onclick="testCustomSound()" style="background:rgba(61,220,132,.12);border:1px solid rgba(61,220,132,.28);border-radius:8px;color:var(--green);font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 11px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-play"></i> Dinle</button>
-              <button id="custom-audio-save-btn" onclick="saveCustomSound()" style="display:none;background:rgba(232,197,71,.15);border:1px solid rgba(232,197,71,.35);border-radius:8px;color:var(--gold);font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 11px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
-              <button id="custom-audio-remove-btn" onclick="removeCustomSound()" style="background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);border-radius:8px;color:var(--red);font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 9px;cursor:pointer"><i class="fa-solid fa-trash"></i></button>
+              <button onclick="removeCustomSound()" style="background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);border-radius:8px;color:var(--red);font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 9px;cursor:pointer"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
           <div class="sr"><div class="sr-ico" style="background:rgba(239,68,68,.1);color:#f87171"><i class="fa-solid fa-bell-ring"></i></div><div class="sr-info"><div class="t">Alarm Testi</div><div class="s">Şu anki sesi dene</div></div><button style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:8px;color:#f87171;font-family:Cairo,sans-serif;font-size:11px;font-weight:800;padding:5px 11px;cursor:pointer;" onclick="testAlarm()">Test</button></div>
@@ -1230,7 +1253,7 @@ const MOT={
 // ═══════════════════════════════════════════
 let S={name:'',city:'',lat:null,lon:null,times:{},done:{},
   alarms:{sabah:true,ogle:true,ikindi:true,aksam:true,yatsi:true},
-  cfg:{alarm:true,imsak:true,early:10,sound:'ezan_hicaz',method:'diyanet',theme:'dark',vibrate:true},
+  cfg:{alarm:true,imsak:true,early:10,sound:'hicaz',method:'diyanet',theme:'dark',vibrate:true},
   groups:[],sozler:[],curGroup:null};
 let alarmLoop=null,vibrateLoop=null,schedIds=[],selEmoVal='🕌',orientFn=null,heading=0,qibla=0;
 
@@ -1462,6 +1485,22 @@ function calcT(lat,lon,date,meth){
 }
 const toMin=t=>{if(!t||t==='--:--')return 9999;const[h,m]=t.split(':').map(Number);return h*60+m;};
 const nowMin=()=>{const n=new Date();return n.getHours()*60+n.getMinutes();};
+// İmsak & Güneş kartları için kalan süre / durum metni
+function fmtExtraSub(t){
+  const tm=toMin(t);
+  if(tm===9999)return{txt:'Hesaplanıyor',cur:false};
+  const d=tm-nowMin();
+  if(d<0)return{txt:'Vakti geçti',cur:false};
+  if(d<=10)return{txt:d===0?'Şimdi':d+' dk kaldı',cur:true};
+  const h=Math.floor(d/60),m=d%60;
+  return{txt:(h>0?h+'sa '+m+'dk kaldı':m+' dk kaldı'),cur:false};
+}
+function renderExtraVakit(){
+  if(!S.times)return;
+  const im=document.getElementById('imsak-sub'),gu=document.getElementById('gunes-sub');
+  if(im){const r=fmtExtraSub(S.times.imsak);im.className='ext-vk-sub'+(r.cur?' now':'');im.innerHTML='<i class="fa-solid fa-circle"></i> '+r.txt;}
+  if(gu){const r=fmtExtraSub(S.times.gunes);gu.className='ext-vk-sub'+(r.cur?' now':'');gu.innerHTML='<i class="fa-solid fa-circle"></i> '+r.txt;}
+}
 const nowTime=()=>{const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');};
 const nearCity=(la,lo)=>{
   let b='istanbul',bd=1e9;
@@ -1625,7 +1664,9 @@ function render(){
   const q=allQ[now.getDate()%allQ.length];
   document.getElementById('qt').textContent=q.ar;
   document.getElementById('qs').textContent=q.src+(q.tr?' · '+q.tr:'');
-  document.getElementById('imsak-t').textContent=S.times.imsak;
+  document.getElementById('imsak-t').textContent=S.times.imsak||'—:—';
+  document.getElementById('gunes-t').textContent=S.times.gunes||'—:—';
+  renderExtraVakit();
   renderDots();renderList();renderPerAlarms();schedAlarms();
   // Gerçek vakitleri arka planda güncelle (dondurmaz)
   maybeUpdateTimes().catch(()=>{});
@@ -2330,6 +2371,10 @@ function renderStats(){
     <div class="stat-card"><div class="stat-val" style="color:var(--gold)">🔥${myDoneToday>=5?'5':myDoneToday>=4?'4':myDoneToday>=2?'2':'1'}</div><div class="stat-lbl">Günlük Seri</div></div>
   `;
 
+  // Üye başarı tablosu
+  const bw=document.getElementById('bars-wrap'),bd=document.getElementById('bars-days');
+  bw.innerHTML='';bd.innerHTML='';
+
   // Her üye için bugün kılınan vakit sayısı
   const sorted=[...g.members].sort((a,b)=>{
     const an=PK.filter(k=>a.done&&a.done[k]).length;
@@ -2337,11 +2382,30 @@ function renderStats(){
     return bn-an;
   });
 
-  // Vakit bazlı istatistik
+  sorted.forEach(m=>{
+    const n=PK.filter(k=>m.done&&m.done[k]).length;
+    const pct=Math.round(n/5*100);
+    const ac=avC(m.name);
+    const bc=document.createElement('div');
+    bc.className='bar-col';
+    bc.innerHTML=`<div class="bar${m.isMe?' today':''}" style="height:${Math.max(4,Math.round(n/5*62))}px;background:${m.isMe?'var(--green)':ac.cl};opacity:${m.isMe?1:0.7}"></div>`;
+    bw.appendChild(bc);
+    const dc=document.createElement('div');
+    dc.className='bar-col';
+    dc.innerHTML=`<div class="bar-day" style="${m.isMe?'color:var(--green);font-weight:900':''}" title="${m.name}">${initials(m.name)}</div>`;
+    bd.appendChild(dc);
+  });
+
+  // Vakit bazlı istatistik (mevcut bars-wrap/bars-days elemanlarını tekrar oluşturmadan, altına ekler)
   const weekCard=document.querySelector('.week-card');
   if(weekCard){
-    // Vakit bazlı kılınma oranı
-    let vakitHtml='<div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">';
+    let extra=weekCard.querySelector('.vakit-stat-extra');
+    if(!extra){
+      extra=document.createElement('div');
+      extra.className='vakit-stat-extra';
+      weekCard.appendChild(extra);
+    }
+    let vakitHtml='<h4 style="margin-top:14px">Vakit Bazlı Grup Durumu</h4><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">';
     PK.forEach(k=>{
       const kildi=g.members.filter(m=>m.done&&m.done[k]).length;
       const pct=g.members.length?Math.round(kildi/g.members.length*100):0;
@@ -2352,19 +2416,7 @@ function renderStats(){
       </div>`;
     });
     vakitHtml+='</div>';
-    weekCard.innerHTML='<h4>Bugün Üye Sıralaması (Vakit Sayısı)</h4><div class="bars-wrap" id="bars-wrap"></div><div class="bars-wrap" id="bars-days" style="height:auto;margin-top:4px;"></div><h4 style="margin-top:14px">Vakit Bazlı Grup Durumu</h4>'+vakitHtml;
-    // Grafikleri yeniden doldur (innerHTML sıfırlandı)
-    const newBw=document.getElementById('bars-wrap'),newBd=document.getElementById('bars-days');
-    sorted.forEach(m=>{
-      const n=PK.filter(k=>m.done&&m.done[k]).length;
-      const ac=avC(m.name);
-      const bc=document.createElement('div');bc.className='bar-col';
-      bc.innerHTML=`<div class="bar${m.isMe?' today':''}" style="height:${Math.max(4,Math.round(n/5*62))}px;background:${m.isMe?'var(--green)':ac.cl};opacity:${m.isMe?1:0.7}"></div>`;
-      newBw.appendChild(bc);
-      const dc=document.createElement('div');dc.className='bar-col';
-      dc.innerHTML=`<div class="bar-day" style="${m.isMe?'color:var(--green);font-weight:900':''}">${initials(m.name)}</div>`;
-      newBd.appendChild(dc);
-    });
+    extra.innerHTML=vakitHtml;
   }
 }
 function renderFullMem(){
@@ -2499,6 +2551,11 @@ function copyInviteCode(){
   const code=g.inviteCode||'——';
   if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>toast('Davet kodu kopyalandı: '+code+' 🔑'));}
   else{toast('Davet kodu: '+code);}
+}
+
+function copyInvite(){
+  // Grup detay sayfasındaki davet butonu
+  openAddMember();
 }
 
 function shareInvite(){
@@ -2779,351 +2836,312 @@ function quickDeleteGroup(gid){
 }
 function renderGroupActions(gid){openGroup(gid);}
 
-// ═══════════════════════════════════════════════════════════
-// KODA GÖMÜLÜ SES SİSTEMİ (HARİCİ DOSYA / KLASÖR GEREKTİRMEZ)
-// ═══════════════════════════════════════════════════════════
-
-const SOUNDS = [
-  // 🕌 EZAN VE MAKAM SESLERİ
-  { id: 'ezan_hicaz',   name: 'Hicaz Makamı Ezan',  sub: 'Klasik ezan tonu',      ico: '🕌' },
-  { id: 'ezan_saba',    name: 'Saba Makamı Ezan',   sub: 'Hüzünlü/Derin ezan',    ico: '🌅' },
-  { id: 'ezan_usshak',  name: 'Uşşak Makamı Ezan',  sub: 'Duygusal ton',          ico: '🌙' },
-
-  // 🎵 NEY VE TASAVVUF TONLARI
-  { id: 'ney_taksim',   name: 'Ney Taksimi',        sub: 'Sufi ney üflemesi',     ico: '🎵' },
-  { id: 'ney_kisa',     name: 'Kısa Ney Tonu',      sub: '3 sn ney sesi',         ico: '🌾' },
-
-  // 🔔 UYARICI KISA BİLDİRİMLER
-  { id: 'tekbir_ton',   name: 'Kısa Tekbir Tonu',   sub: 'Makamlı uyarı',         ico: '☝️' },
-  { id: 'bip_dijital',  name: 'Dijital Bip',        sub: 'Net saat uyarısı',      ico: '⏰' },
-  { id: 'soft_chime',   name: 'Yumuşak Çan',        sub: 'Hafif hatırlatma',      ico: '🔔' },
-  { id: 'su_damlasi',   name: 'Su Damlası',          sub: 'Doğal uyarı tonu',      ico: '💧' },
-
-  { id: 'silent',       name: 'Sessiz',             sub: 'Yalnız görsel uyarı',   ico: '🔕' }
+// ═══════════════════════════════════════════
+// SES SİSTEMİ
+// ═══════════════════════════════════════════
+const SOUNDS=[
+  {id:'hicaz',  name:'Hicaz Makamı',   sub:'Klasik ezan makamı', ico:'🕌'},
+  {id:'usshak', name:'Uşşak Makamı',   sub:'Duygusal ve derin',  ico:'🌙'},
+  {id:'rast',   name:'Rast Makamı',    sub:'Huzurlu sabah tonu', ico:'🌅'},
+  {id:'saba',   name:'Saba Makamı',    sub:'Mekke ezanı tonu',   ico:'🕋'},
+  {id:'ney',    name:'Ney Taksimi',    sub:'Tasavvuf / sufi',    ico:'🎵'},
+  {id:'ud',     name:'Ud Teli',        sub:'Telli enstrüman',    ico:'🎸'},
+  {id:'gentle', name:'Yumuşak Çan',    sub:'Hafif hatırlatma',   ico:'🔔'},
+  {id:'silent', name:'Sessiz',         sub:'Yalnız görsel uyarı',ico:'🔕'},
 ];
 
-// ── Web Audio API ile Canlı Ses Üreteci ─────────────────────
-function generateAudio(type) {
-  if (type === 'silent') return;
+let customAudioUrl=null,customAudioName=null,customAudio=null,previewAudio=null;
 
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const now = ctx.currentTime;
+// ── Makam tanımları ────────────────────────
+// Her nota: {f:Hz, d:süre(s), v:vibrato?, g:glide?}
+const MAQAM={
 
-    // 1. DİJİTAL BİP SESİ
-    if (type === 'bip_dijital') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.setValueAtTime(1046.50, now); // C6 notası
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.start(now); osc.stop(now + 0.15);
-      return 300;
-    }
+  hicaz:{ // Hicaz — Re Mi♭ Fi# Sol La Si♭ Do Re
+    bpm:52,
+    phrases:[
+      // Cümle 1: yükselen
+      [{f:293.66,d:.55},{f:311.13,d:.3},{f:369.99,d:.65,v:.7},{f:392,d:.45},{f:0,d:.18}],
+      // Cümle 2: orta
+      [{f:440,d:.5},{f:415.3,d:.3},{f:392,d:.6,v:.5},{f:369.99,d:.4},{f:311.13,d:.3},{f:0,d:.2}],
+      // Cümle 3: alçalan karar
+      [{f:369.99,d:.5},{f:349.23,d:.3},{f:311.13,d:.7,v:.8},{f:293.66,d:.9}],
+    ],
+    type:'sine'
+  },
 
-    // 2. SU DAMLASI SESİ
-    if (type === 'su_damlasi') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.setValueAtTime(600, now);
-      osc.frequency.exponentialRampToValueAtTime(1800, now + 0.08); // Hızlı frekans yükselmesi
-      gain.gain.setValueAtTime(0.4, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.start(now); osc.stop(now + 0.12);
-      return 300;
-    }
+  usshak:{ // Uşşak — Re Mi♭ Fa Sol La Si♭ Do Re  (küçük ikili karakteristik)
+    bpm:46,
+    phrases:[
+      [{f:220,d:.6},{f:246.94,d:.45,v:.4},{f:261.63,d:.55},{f:293.66,d:.7,v:.6},{f:0,d:.22}],
+      [{f:329.63,d:.5},{f:311.13,d:.35},{f:293.66,d:.6,v:.5},{f:261.63,d:.4},{f:0,d:.2}],
+      [{f:246.94,d:.55},{f:220,d:.45,v:.6},{f:196,d:.5},{f:220,d:1.1,v:.9}],
+    ],
+    type:'sine'
+  },
 
-    // 3. YUMUŞAK ÇAN / GONG SESİ
-    if (type === 'soft_chime') {
-      [528, 660, 792].forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0, now + i * 0.15);
-        gain.gain.linearRampToValueAtTime(0.3, now + i * 0.15 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 1.2);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 1.2);
+  rast:{ // Rast — Do Re Mi♭ Fa Sol La Si♭ Do (sakin, parlak)
+    bpm:56,
+    phrases:[
+      [{f:261.63,d:.5},{f:293.66,d:.45},{f:329.63,d:.6,v:.4},{f:349.23,d:.5},{f:0,d:.2}],
+      [{f:392,d:.55},{f:440,d:.4,v:.5},{f:392,d:.45},{f:349.23,d:.55},{f:329.63,d:.4},{f:0,d:.18}],
+      [{f:293.66,d:.5},{f:261.63,d:.45,v:.6},{f:246.94,d:.4},{f:261.63,d:1.0,v:.8}],
+    ],
+    type:'sine'
+  },
+
+  saba:{ // Saba — Re Mi♭ Fa♭ Sol La♭ Si♭ Do Re (hüzünlü, otantik)
+    bpm:44,
+    phrases:[
+      [{f:293.66,d:.6},{f:311.13,d:.4},{f:329.63,d:.3},{f:277.18,d:.7,v:.6},{f:0,d:.25}],
+      [{f:293.66,d:.5},{f:349.23,d:.4},{f:392,d:.6,v:.5},{f:369.99,d:.4},{f:349.23,d:.5},{f:0,d:.2}],
+      [{f:329.63,d:.4},{f:311.13,d:.5},{f:293.66,d:.45,v:.7},{f:277.18,d:.4},{f:261.63,d:.4},{f:293.66,d:.9,v:.8}],
+    ],
+    type:'sine'
+  },
+
+  ney:{ // Ney — üfleme, nefes sesi, sufi
+    bpm:38,
+    phrases:[
+      [{f:174.61,d:.8,v:.3},{f:0,d:.12},{f:196,d:.6,v:.4},{f:220,d:.7,v:.5},{f:0,d:.25}],
+      [{f:246.94,d:.7,v:.5},{f:220,d:.55,v:.4},{f:196,d:.75,v:.3},{f:0,d:.3}],
+      [{f:185,d:.6,v:.4},{f:174.61,d:.5,v:.5},{f:164.81,d:.7,v:.3},{f:174.61,d:1.2,v:.6}],
+    ],
+    type:'triangle',breathNoise:true
+  },
+
+  ud:{ // Ud — telli, parmak tırnak sesi (kısa tiz + uzun rezonans)
+    bpm:60,
+    phrases:[
+      [{f:196,d:.12,pluck:true},{f:246.94,d:.12,pluck:true},{f:293.66,d:.2,pluck:true},{f:349.23,d:.35,pluck:true},{f:392,d:.5,pluck:true},{f:0,d:.3}],
+      [{f:440,d:.15,pluck:true},{f:392,d:.12,pluck:true},{f:349.23,d:.2,pluck:true},{f:329.63,d:.35,pluck:true},{f:0,d:.25}],
+      [{f:293.66,d:.15,pluck:true},{f:261.63,d:.12,pluck:true},{f:246.94,d:.5,pluck:true},{f:220,d:.8,pluck:true}],
+    ],
+    type:'sawtooth'
+  },
+
+  gentle:{ // Yumuşak çan / gong
+    bpm:72,
+    phrases:[
+      [{f:528,d:.5,bell:true},{f:0,d:.2},{f:594,d:.45,bell:true},{f:0,d:.18},{f:660,d:.6,bell:true},{f:0,d:.25}],
+      [{f:594,d:.45,bell:true},{f:528,d:.7,bell:true}],
+    ],
+    type:'sine'
+  },
+};
+
+function playMaqam(id,loop){
+  if(id==='silent')return 0;
+  const m=MAQAM[id]||MAQAM.hicaz;
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const masterGain=ctx.createGain();masterGain.gain.value=0.42;
+    // Reverb (konvolüsyon yerine basit delay+feedback)
+    const delay=ctx.createDelay(0.4);delay.delayTime.value=0.22;
+    const fb=ctx.createGain();fb.gain.value=0.28;
+    const wet=ctx.createGain();wet.gain.value=0.22;
+    delay.connect(fb);fb.connect(delay);delay.connect(wet);wet.connect(ctx.destination);
+    masterGain.connect(ctx.destination);masterGain.connect(delay);
+
+    let t=ctx.currentTime+0.05;
+
+    m.phrases.forEach(phrase=>{
+      phrase.forEach(note=>{
+        if(!note.f){t+=note.d;return;}
+        if(note.pluck){
+          // Ud teli: kısa atak + uzun exponential decay + harmonik
+          [1,2,3].forEach((harm,hi)=>{
+            const o=ctx.createOscillator();const g=ctx.createGain();
+            o.type=hi===0?'sawtooth':'sine';
+            o.frequency.value=note.f*harm;
+            const harmGain=[0.5,0.25,0.1][hi];
+            g.gain.setValueAtTime(0,t);
+            g.gain.linearRampToValueAtTime(harmGain,t+0.008);
+            g.gain.exponentialRampToValueAtTime(0.001,t+note.d*3.5);
+            o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+note.d*3.5+0.1);
+          });
+          t+=note.d;return;
+        }
+        if(note.bell){
+          // Çan: hızlı atak çok yavaş decay, inharmonik
+          [1,2.756,5.404].forEach((ratio,hi)=>{
+            const o=ctx.createOscillator();const g=ctx.createGain();
+            o.type='sine';o.frequency.value=note.f*ratio;
+            const hv=[0.4,0.15,0.05][hi];
+            g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(hv,t+0.004);
+            g.gain.exponentialRampToValueAtTime(0.001,t+note.d*4);
+            o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+note.d*4+0.05);
+          });
+          t+=note.d;return;
+        }
+
+        // Normal nota: sin/triangle + harmonik 2+3
+        const osc=ctx.createOscillator();const g=ctx.createGain();
+        osc.type=m.type||'sine';osc.frequency.setValueAtTime(note.f,t);
+
+        // Vibrato
+        if(note.v&&note.v>0){
+          const vib=ctx.createOscillator();const vibG=ctx.createGain();
+          vib.frequency.value=5.2+Math.random()*0.5;vibG.gain.value=0;
+          const vDelay=note.d*0.25;
+          vibG.gain.setValueAtTime(0,t+vDelay);
+          vibG.gain.linearRampToValueAtTime(note.f*0.012*note.v,t+vDelay+0.12);
+          vibG.gain.setValueAtTime(note.f*0.012*note.v,t+note.d*0.8);
+          vibG.gain.linearRampToValueAtTime(0,t+note.d);
+          vib.connect(vibG);vibG.connect(osc.frequency);
+          vib.start(t);vib.stop(t+note.d+0.05);
+        }
+
+        // Ney nefes gürültüsü
+        if(m.breathNoise){
+          const buf=ctx.createBuffer(1,ctx.sampleRate*note.d,ctx.sampleRate);
+          const data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*0.04;
+          const ns=ctx.createBufferSource();ns.buffer=buf;
+          const nf=ctx.createBiquadFilter();nf.type='bandpass';nf.frequency.value=note.f*1.6;nf.Q.value=2;
+          const ng=ctx.createGain();ng.gain.value=0.18;
+          ns.connect(nf);nf.connect(ng);ng.connect(masterGain);ns.start(t);
+        }
+
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(0.38,t+Math.min(0.08,note.d*0.15));
+        g.gain.setValueAtTime(0.38,t+note.d*0.72);
+        g.gain.exponentialRampToValueAtTime(0.001,t+note.d+0.05);
+        osc.connect(g);g.connect(masterGain);osc.start(t);osc.stop(t+note.d+0.1);
+
+        // 2. harmonik (yarım ses tını zenginleştirme)
+        const o2=ctx.createOscillator();const g2=ctx.createGain();
+        o2.type='sine';o2.frequency.value=note.f*2;
+        g2.gain.setValueAtTime(0,t);g2.gain.linearRampToValueAtTime(0.06,t+0.05);
+        g2.gain.exponentialRampToValueAtTime(0.001,t+note.d*0.8);
+        o2.connect(g2);g2.connect(masterGain);o2.start(t);o2.stop(t+note.d+0.05);
+
+        t+=note.d+0.04;
       });
-      return 1500;
-    }
-
-    // 4. KISA TEKBİR TONU
-    if (type === 'tekbir_ton') {
-      const notes = [293.66, 349.23, 329.63, 293.66]; // Re - Fa - Mi - Re
-      notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0, now + i * 0.3);
-        gain.gain.linearRampToValueAtTime(0.35, now + i * 0.3 + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.3 + 0.35);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(now + i * 0.3); osc.stop(now + i * 0.3 + 0.38);
-      });
-      return 1500;
-    }
-
-    // 5. NEY VE EZAN MAKAM TONLARI (Sentetik Akustik)
-    const sequences = {
-      'ney_kisa':    [{f:174.61,d:.8},{f:196,d:.6},{f:220,d:1.0}],
-      'ney_taksim': [{f:174.61,d:.8},{f:196,d:.6},{f:220,d:.7},{f:246.94,d:.7},{f:220,d:1.2}],
-      'ezan_hicaz': [{f:293.66,d:.5},{f:311.13,d:.3},{f:369.99,d:.65},{f:392,d:.45},{f:311.13,d:.7},{f:293.66,d:1.0}],
-      'ezan_saba':  [{f:293.66,d:.6},{f:311.13,d:.4},{f:277.18,d:.7},{f:261.63,d:.4},{f:293.66,d:1.2}],
-      'ezan_usshak':[{f:220,d:.6},{f:246.94,d:.45},{f:293.66,d:.7},{f:246.94,d:.55},{f:220,d:1.1}]
-    };
-
-    const seq = sequences[type] || sequences['ezan_hicaz'];
-    let t = now;
-
-    seq.forEach(note => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = type.includes('ney') ? 'triangle' : 'sine';
-      osc.frequency.setValueAtTime(note.f, t);
-
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.35, t + 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + note.d);
-
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.start(t); osc.stop(t + note.d + 0.05);
-      t += note.d + 0.05;
+      t+=0.15; // cümleler arası nefes
     });
 
-    return (t - now) * 1000;
-
-  } catch (e) {
-    console.error('Ses üretme hatası:', e);
-    return 2000;
-  }
+    const totalMs=(t-ctx.currentTime)*1000+600;
+    return totalMs;
+  }catch(e){return 4000;}
 }
 
-// ── Sesi Çalma Ve Önizleme ──────────────────────────────────
-let _customAudioEl = null;
-const CUSTOM_SOUND_KEY = 'cm6_custom_sound';
-
-function stopCustomAudio() {
-  if (_customAudioEl) {
-    try { _customAudioEl.pause(); _customAudioEl.currentTime = 0; } catch (e) {}
-    _customAudioEl = null;
+function playSound(type){
+  if(alarmLoop)return;
+  if(type==='silent')return;
+  if(type==='custom'&&customAudioUrl){
+    const play=()=>{const a=new Audio(customAudioUrl);a.volume=0.85;a.play().catch(()=>{});};
+    play();alarmLoop=setInterval(play,6500);return;
   }
+  const dur=playMaqam(type);
+  alarmLoop=setInterval(()=>playMaqam(type),(dur||5000)+1000);
 }
 
-function stopAllAudio() {
-  if (alarmLoop) { clearInterval(alarmLoop); alarmLoop = null; }
-  stopCustomAudio();
+function previewSound(type){
+  if(previewAudio){previewAudio.pause();previewAudio=null;}
+  if(type==='silent'){toast('Sessiz modu — görsel uyarı','fa-volume-xmark');return;}
+  playMaqam(type);
+  const nm=SOUNDS.find(x=>x.id===type);
+  toast('🎵 '+(nm?nm.name:type)+' önizleniyor');
 }
 
-function getCustomSound() {
-  try { return JSON.parse(localStorage.getItem(CUSTOM_SOUND_KEY) || 'null'); }
-  catch (e) { return null; }
-}
-
-function playCustomAudio(loop, dataUrl) {
-  const src = dataUrl || (getCustomSound() || {}).data;
-  if (!src) {
-    if (typeof toast === 'function') toast('Önce bir ses dosyası yükleyin', 'fa-triangle-exclamation');
-    return false;
-  }
-  stopCustomAudio();
-  _customAudioEl = new Audio(src);
-  _customAudioEl.loop = !!loop;
-  _customAudioEl.play().catch(() => {});
-  return true;
-}
-
-function previewSound(type) {
-  stopAllAudio();
-  if (type === 'silent') {
-    if (typeof toast === 'function') toast('Sessiz mod — Yalnızca görsel uyarı', 'fa-volume-xmark');
-    return;
-  }
-  if (type === 'custom') {
-    const cs = getCustomSound();
-    if (playCustomAudio(false) && typeof toast === 'function') toast('🎵 ' + (cs ? cs.name : 'Özel Ses') + ' çalınıyor');
-    return;
-  }
-  generateAudio(type);
-  const nm = SOUNDS.find(x => x.id === type);
-  if (typeof toast === 'function') toast('🎵 ' + (nm ? nm.name : type) + ' çalınıyor');
-}
-
-function playSound(type) {
-  stopAllAudio();
-  if (type === 'silent') return;
-
-  if (type === 'custom') {
-    // Kendi yüklediği ses bulunamazsa varsayılan ezana geri düş
-    if (!playCustomAudio(true)) playSound('ezan_hicaz');
-    return;
-  }
-
-  const duration = generateAudio(type);
-  
-  // Kısa uyarı sesleri dışındakileri döngüye al
-  if (!['bip_dijital', 'su_damlasi', 'soft_chime', 'tekbir_ton', 'ney_kisa'].includes(type)) {
-    alarmLoop = setInterval(() => generateAudio(type), (duration || 3000) + 1500);
-  }
-}
-
-// ── Kendi Sesini Yükleme / Test / Kaydetme / Kaldırma ────────
-// Dosya seçilince hemen kaydedilmez; kullanıcı "Kaydet"e basana kadar
-// yalnızca bellekte (bekleyen/pending) tutulur.
-let _pendingCustomSound = null; // {name, data} — henüz kaydedilmemiş seçim
-
-function _setCustomSoundRowUI(state, name) {
-  // state: 'none' | 'pending' | 'saved'
-  const row = document.getElementById('custom-audio-row');
-  const nameEl = document.getElementById('custom-audio-name');
-  const statusEl = document.getElementById('custom-audio-status');
-  const saveBtn = document.getElementById('custom-audio-save-btn');
-  const removeBtn = document.getElementById('custom-audio-remove-btn');
-
-  if (row) row.style.display = state === 'none' ? 'none' : 'flex';
-  if (nameEl) nameEl.textContent = name || '';
-  if (saveBtn) saveBtn.style.display = state === 'pending' ? 'inline-flex' : 'none';
-  if (removeBtn) removeBtn.title = state === 'pending' ? 'Seçimi iptal et' : 'Sesi kaldır';
-  if (statusEl) {
-    if (state === 'pending') {
-      statusEl.textContent = 'Kaydedilmedi';
-      statusEl.style.background = 'rgba(255,184,48,.15)';
-      statusEl.style.color = 'var(--amber)';
-    } else if (state === 'saved') {
-      statusEl.textContent = 'Kaydedildi ✓';
-      statusEl.style.background = 'rgba(61,220,132,.15)';
-      statusEl.style.color = 'var(--green)';
-    } else {
-      statusEl.textContent = '';
-    }
-  }
-}
-
-function loadCustomSound(input) {
-  const file = input && input.files && input.files[0];
-  if (!file) return;
-
-  if (!file.type.startsWith('audio/')) {
-    if (typeof toast === 'function') toast('Lütfen bir ses dosyası seçin (MP3, WAV, OGG)', 'fa-triangle-exclamation');
-    input.value = '';
-    return;
-  }
-  const MAX_SIZE = 2 * 1024 * 1024; // 2MB — tarayıcı depolama (localStorage) sınırını aşmamak için
-  if (file.size > MAX_SIZE) {
-    if (typeof toast === 'function') toast('Ses dosyası çok büyük (en fazla 2MB)', 'fa-triangle-exclamation');
-    input.value = '';
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    // Henüz kaydedilmiyor — sadece bekleyen seçim olarak tutuluyor
-    _pendingCustomSound = { name: file.name, data: reader.result };
-    _setCustomSoundRowUI('pending', file.name);
-    if (typeof toast === 'function') toast('🎵 ' + file.name + ' seçildi — kaydetmek için "Kaydet"e bas');
-    input.value = '';
-  };
-  reader.onerror = () => { if (typeof toast === 'function') toast('Ses dosyası okunamadı', 'fa-triangle-exclamation'); };
-  reader.readAsDataURL(file);
-}
-
-function testCustomSound() {
-  stopAllAudio();
-  // Önce bekleyen (henüz kaydedilmemiş) seçim varsa onu dinlet
-  if (_pendingCustomSound) {
-    playCustomAudio(false, _pendingCustomSound.data);
-    if (typeof toast === 'function') toast('🎵 ' + _pendingCustomSound.name + ' çalınıyor (kaydedilmedi)');
-    return;
-  }
-  const cs = getCustomSound();
-  if (!cs) { if (typeof toast === 'function') toast('Önce bir ses dosyası yükleyin', 'fa-triangle-exclamation'); return; }
-  playCustomAudio(false);
-  if (typeof toast === 'function') toast('🎵 ' + cs.name + ' çalınıyor');
-}
-
-function saveCustomSound() {
-  if (!_pendingCustomSound) return;
-  try {
-    localStorage.setItem(CUSTOM_SOUND_KEY, JSON.stringify(_pendingCustomSound));
-  } catch (e) {
-    if (typeof toast === 'function') toast('Ses kaydedilemedi (depolama alanı dolu)', 'fa-triangle-exclamation');
-    return;
-  }
-  const name = _pendingCustomSound.name;
-  _pendingCustomSound = null;
-  if (window.S && S.cfg) { S.cfg.sound = 'custom'; if (typeof save === 'function') save(); }
-  _setCustomSoundRowUI('saved', name);
-  if (typeof renderSoundGrid === 'function') renderSoundGrid();
-  if (typeof toast === 'function') toast('✅ ' + name + ' kaydedildi ve alarm sesi olarak ayarlandı');
-}
-
-function removeCustomSound() {
-  stopAllAudio();
-  // Bekleyen (kaydedilmemiş) bir seçim varsa sadece onu iptal et
-  if (_pendingCustomSound) {
-    _pendingCustomSound = null;
-    const cs = getCustomSound();
-    _setCustomSoundRowUI(cs ? 'saved' : 'none', cs ? cs.name : null);
-    if (typeof toast === 'function') toast('Seçim iptal edildi');
-    return;
-  }
-  // Aksi halde daha önce kaydedilmiş özel sesi tamamen kaldır
-  localStorage.removeItem(CUSTOM_SOUND_KEY);
-  _setCustomSoundRowUI('none', null);
-  if (window.S && S.cfg && S.cfg.sound === 'custom') {
-    S.cfg.sound = 'ezan_hicaz';
-    if (typeof save === 'function') save();
-  }
-  if (typeof renderSoundGrid === 'function') renderSoundGrid();
-  if (typeof toast === 'function') toast('Özel ses kaldırıldı');
-}
-
-// ── Ses Seçim Izgarasını Ekrana Çizme ───────────────────────
-function renderSoundGrid() {
-  const grid = document.getElementById('sound-grid'); if (!grid) return;
-  grid.innerHTML = '';
-  const cur = (window.S && S.cfg && S.cfg.sound) ? S.cfg.sound : 'ezan_hicaz';
-
-  SOUNDS.forEach(s => {
-    const div = document.createElement('div');
-    div.className = 'sound-opt' + (cur === s.id ? ' sel' : '');
-    div.onclick = () => selectSound(s.id);
-    div.innerHTML = `
+function renderSoundGrid(){
+  const grid=document.getElementById('sound-grid');if(!grid)return;
+  grid.innerHTML='';
+  const cur=S.cfg.sound||'ezan1';
+  SOUNDS.forEach(s=>{
+    const div=document.createElement('div');
+    div.className='sound-opt'+(cur===s.id?' sel':'');
+    div.onclick=()=>selectSound(s.id);
+    div.innerHTML=`
       <div class="sound-opt-check"><i class="fa-solid fa-check"></i></div>
       <div class="sound-opt-ico">${s.ico}</div>
       <div class="sound-opt-name">${s.name}</div>
       <div class="sound-opt-sub">${s.sub}</div>
       <i class="fa-solid fa-play play-ico"></i>`;
-    div.querySelector('.play-ico').addEventListener('click', e => { e.stopPropagation(); previewSound(s.id); });
+    div.querySelector('.play-ico').addEventListener('click',e=>{e.stopPropagation();previewSound(s.id);});
     grid.appendChild(div);
   });
-
-  const lbl = document.getElementById('sel-sound-lbl');
-  const cs = getCustomSound();
-  if (lbl) {
-    if (cur === 'custom') {
-      lbl.textContent = 'Seçili: ' + (cs ? cs.name : 'Özel Ses');
-    } else {
-      const s = SOUNDS.find(x => x.id === cur);
-      lbl.textContent = 'Seçili: ' + (s ? s.name : 'Hicaz Makamı Ezan');
-    }
+  // Özel ses varsa grid'e ekle
+  if(customAudioName){
+    const div=document.createElement('div');
+    const isCur=cur==='custom';
+    div.className='sound-opt'+(isCur?' sel':'');
+    div.onclick=()=>selectSound('custom');
+    div.innerHTML=`
+      <div class="sound-opt-check"><i class="fa-solid fa-check"></i></div>
+      <div class="sound-opt-ico">🎶</div>
+      <div class="sound-opt-name" style="font-size:10px">${customAudioName.length>14?customAudioName.slice(0,12)+'…':customAudioName}</div>
+      <div class="sound-opt-sub">Yüklenen ses</div>
+      <i class="fa-solid fa-play play-ico"></i>`;
+    div.querySelector('.play-ico').addEventListener('click',e=>{e.stopPropagation();testCustomSound();});
+    grid.appendChild(div);
   }
-  // Sayfa yeniden çizildiğinde bekleyen bir seçim varsa onu, yoksa kaydedilmiş
-  // özel sesin durumunu senkronize et.
-  if (_pendingCustomSound) {
-    _setCustomSoundRowUI('pending', _pendingCustomSound.name);
-  } else {
-    _setCustomSoundRowUI(cs ? 'saved' : 'none', cs ? cs.name : null);
-  }
+  const lbl=document.getElementById('sel-sound-lbl');
+  if(lbl){const s=SOUNDS.find(x=>x.id===cur);lbl.textContent='Seçili: '+(cur==='custom'?customAudioName||'Kişisel Ses':s?s.name:'Klasik Ezan');}
 }
 
-function selectSound(id) {
-  if (window.S && S.cfg) S.cfg.sound = id;
-  if (typeof save === 'function') save();
-  renderSoundGrid();
+function selectSound(id){
+  S.cfg.sound=id;save();renderSoundGrid();
+}
+
+// Özel ses yükleme
+function loadCustomSound(inp){
+  const file=inp.files[0];if(!file)return;
+  const maxMB=10;
+  if(file.size>maxMB*1024*1024){toast(`Dosya max ${maxMB}MB olabilir.`,false);inp.value='';return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    customAudioUrl=e.target.result;
+    customAudioName=file.name.replace(/\.[^.]+$/,'');
+    // localStorage'a kaydet (base64)
+    try{localStorage.setItem('cm6_audio',customAudioUrl);localStorage.setItem('cm6_audio_name',customAudioName);}catch(e){toast('Ses kaydedilemedi, hafıza dolu.',false);}
+    showCustomAudioRow();
+    selectSound('custom');
+    renderSoundGrid();
+    toast('Ses yüklendi: '+customAudioName+' 🎵');
+  };
+  reader.readAsDataURL(file);
+}
+function showCustomAudioRow(){
+  const row=document.getElementById('custom-audio-row');
+  const nm=document.getElementById('custom-audio-name');
+  if(row){row.style.display='flex';}
+  if(nm&&customAudioName)nm.textContent=customAudioName;
+}
+function testCustomSound(){
+  if(!customAudioUrl){toast('Önce ses yükleyin.',false);return;}
+  if(previewAudio){previewAudio.pause();}
+  previewAudio=new Audio(customAudioUrl);previewAudio.volume=0.8;
+  previewAudio.play().catch(()=>toast('Ses çalınamadı.',false));
+}
+function removeCustomSound(){
+  customAudioUrl=null;customAudioName=null;
+  try{localStorage.removeItem('cm6_audio');localStorage.removeItem('cm6_audio_name');}catch(e){}
+  document.getElementById('custom-audio-row').style.display='none';
+  document.getElementById('sound-file-inp').value='';
+  if(S.cfg.sound==='custom'){S.cfg.sound='ezan1';save();}
+  renderSoundGrid();toast('Ses silindi.');
+}
+function loadCustomAudioFromStorage(){
+  try{
+    const url=localStorage.getItem('cm6_audio');
+    const name=localStorage.getItem('cm6_audio_name');
+    if(url&&name){customAudioUrl=url;customAudioName=name;showCustomAudioRow();}
+  }catch(e){}
+}
+
+// ─── renderSetPage'e ses grid'i ekle ───────
+const _origRenderSetPage=typeof renderSetPage==='function'?renderSetPage:null;
+function schedAlarms(){
+  schedIds.forEach(clearTimeout);schedIds=[];if(!S.cfg.alarm)return;
+  const earlyMs=S.cfg.early*60000;
+  const keys=[...PK];if(S.cfg.imsak)keys.unshift('imsak');
+  keys.forEach(k=>{
+    if(k!=='imsak'&&S.alarms[k]===false)return;
+    const t=S.times[k];if(!t||t==='--:--')return;
+    const[h,m]=t.split(':').map(Number);const td=new Date();td.setHours(h,m,0,0);
+    const diff=td.getTime()-earlyMs-Date.now();
+    if(diff>0&&diff<86400000)schedIds.push(setTimeout(()=>triggerAlarm(k,t),diff));
+  });
 }
 // ═══════════════════════════════════════════
 // ALARM ZAMANLAMA
@@ -3221,6 +3239,11 @@ function saveSettings(){
   save();render();renderGroups();toast('Ayarlar kaydedildi!');
 }
 
+// ═══════════════════════════════════════════
+// MODALS & UTILS
+// ═══════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
 // ═══════════════════════════════════════════
 // HİCRİ TARİH
 // ═══════════════════════════════════════════
