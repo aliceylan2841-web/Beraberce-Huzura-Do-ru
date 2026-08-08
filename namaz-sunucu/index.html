@@ -1326,7 +1326,18 @@ function save(){
 
 // ── Grup işlemleri ────────────────────────────────────
 
-async function loadGroups(){
+// Sunucudan gelen en son grup listesini cihaza da yaz (çevrimdışı/başarısız istek durumunda kaybolmasın diye)
+function cacheGroupsLocally(){
+  try{localStorage.setItem('cm6_groups',JSON.stringify(S.groups||[]));}catch(e){}
+}
+function loadCachedGroups(){
+  try{
+    const g=JSON.parse(localStorage.getItem('cm6_groups')||'null');
+    if(Array.isArray(g)&&g.length)S.groups=g;
+  }catch(e){}
+}
+
+async function loadGroups(retry){
   const groups=await apiFetch('/api/groups');
   if(groups){
     // Her grubun üyelerinde done objesini başlat
@@ -1338,7 +1349,17 @@ async function loadGroups(){
         PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});
       });
     });
-    S.groups=groups;renderGroups&&renderGroups();
+    S.groups=groups;S._groupsLoaded=true;cacheGroupsLocally();
+    renderGroups&&renderGroups();
+  }else if(!retry){
+    // Sunucu muhtemelen uykuda (Render soğuk başlangıcı) — biraz bekleyip bir kez daha dene.
+    // Bu sırada mevcut/önbellekteki gruplar ekranda kalmaya devam eder, "kayboluyor" hissi oluşmaz.
+    setTimeout(()=>{loadGroups(true).catch(()=>{});},4000);
+  }else{
+    // İkinci deneme de başarısız oldu: en azından yüklendi bilgisini işaretle ki
+    // önbellekte grup yoksa "Henüz grup yok" yerine "bağlanılamadı" mesajı gösterebilelim.
+    if(!S.groups||!S.groups.length)S._groupsLoaded='offline';
+    renderGroups&&renderGroups();
   }
 }
 
@@ -2012,8 +2033,15 @@ const initials=n=>(n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpp
 function renderGroups(){
   const el=document.getElementById('grp-list');if(!el)return;
   el.innerHTML='';
+  cacheGroupsLocally();
   if(!S.groups||!S.groups.length){
-    el.innerHTML='<div style="text-align:center;padding:30px 15px;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">🕌</div><div style="font-size:14px;font-weight:800">Henüz grup yok</div><div style="font-size:12px;margin-top:6px">Yeni grup oluştur veya davet kodu ile katıl</div></div>';
+    const loading=!S._groupsLoaded;
+    const offline=S._groupsLoaded==='offline';
+    el.innerHTML=loading
+      ?'<div style="text-align:center;padding:30px 15px;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">⏳</div><div style="font-size:14px;font-weight:800">Gruplar yükleniyor…</div><div style="font-size:12px;margin-top:6px">Az önce bir grup oluşturduysanız birazdan görünecek</div></div>'
+      :offline
+      ?'<div style="text-align:center;padding:30px 15px;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">📴</div><div style="font-size:14px;font-weight:800">Sunucuya bağlanılamadı</div><div style="font-size:12px;margin-top:6px">Grupların varsa bağlantı geri gelince görünecek. Kaybolmadılar.</div><button class="loc-btn" style="margin-top:12px;display:inline-flex" onclick="loadGroups()"><i class="fa-solid fa-rotate"></i> Tekrar Dene</button></div>'
+      :'<div style="text-align:center;padding:30px 15px;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">🕌</div><div style="font-size:14px;font-weight:800">Henüz grup yok</div><div style="font-size:12px;margin-top:6px">Yeni grup oluştur veya davet kodu ile katıl</div></div>';
     return;
   }
   S.groups.forEach(g=>{
@@ -3298,6 +3326,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   genStars();
   // 1) Önce localStorage'dan anlık yükle (hızlı)
   try{_applyUser(JSON.parse(localStorage.getItem('cm6')||'{}'));}catch(e){}
+  // Gruplar için de önbellekten anlık göster (sunucu yanıtı gelene kadar "boş" görünmesin)
+  loadCachedGroups();
   // Özel ses varsa geri yükle
   loadCustomAudioFromStorage();
   // Tema uygula
@@ -3316,6 +3346,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
   setInterval(()=>{if(document.getElementById('pg-main').classList.contains('show'))render();},60000);
   // Her 30sn chat yenile
   setInterval(()=>{if(S.curGroup)refreshChat(S.curGroup);},30000);
+  // Uygulama arka plandan öne gelince gruplar sessizce tazelensin (mevcut liste silinmeden)
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible')loadGroups().catch(()=>{});
+  });
 });
 
 // ═══════════════════════════════════════════
