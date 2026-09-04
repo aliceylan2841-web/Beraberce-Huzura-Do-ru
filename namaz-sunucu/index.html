@@ -69,6 +69,136 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
 /* ── RAMAZAN countdown glow ── */
 #rmz-cd{text-shadow:0 0 20px rgba(61,220,132,.4);}
 
+/* ── BUGÜNÜN HUZURU kartı ── */
+.huzur-card{background:linear-gradient(135deg,rgba(255,107,138,.1),rgba(232,197,71,.05));border:1px solid rgba(255,107,138,.22);border-radius:17px;padding:14px 16px;margin-bottom:12px;position:relative;overflow:hidden;}
+[data-theme="light"] .huzur-card{background:linear-gradient(135deg,rgba(255,107,138,.12),rgba(255,248,220,.5));border-color:rgba(255,107,138,.3);}
+.huzur-card::before{content:'';position:absolute;top:-24px;right:-24px;width:90px;height:90px;background:radial-gradient(circle,rgba(255,107,138,.14),transparent 70%);border-radius:50%;}
+.huzur-lbl{font-size:10px;color:var(--t3);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.huzur-txt{font-size:13.5px;color:var(--t1);font-weight:700;line-height:1.6;margin-bottom:8px;}
+.huzur-tesbih{font-size:11px;color:#ff8aa3;font-weight:800;display:flex;align-items:center;gap:5px;}
+
+/* ── HUZUR SEKMESİ ── */
+.hz-subtabs{display:flex;gap:8px;margin-bottom:14px;}
+.hz-sub-btn{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:12px;color:var(--t2);font-family:'Cairo',sans-serif;font-size:12.5px;font-weight:800;padding:10px 8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;}
+.hz-sub-btn.act{background:rgba(255,107,138,.14);border-color:rgba(255,107,138,.35);color:#ff6b8a;}
+.hz-body{display:none;}
+.hz-body.show{display:block;}
+.dua-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.dua-cat-chip{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--t2);font-family:'Cairo',sans-serif;font-size:11px;font-weight:800;padding:6px 11px;cursor:pointer;transition:all .2s;}
+.dua-cat-chip.act{background:rgba(61,220,132,.15);border-color:rgba(61,220,132,.35);color:var(--green);}
+.dua-item{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:13px 14px;margin-bottom:9px;display:flex;align-items:center;gap:11px;}
+.dua-item.done{opacity:.55;}
+.dua-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--border2);background:transparent;color:transparent;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0;transition:all .2s;}
+.dua-check.on{background:var(--green2);border-color:var(--green2);color:#fff;}
+.dua-info{flex:1;min-width:0;}
+.dua-title{font-size:13.5px;font-weight:800;color:var(--t1);}
+.dua-item.done .dua-title{text-decoration:line-through;}
+.dua-meta{font-size:10px;color:var(--t3);font-weight:700;margin-top:2px;display:flex;gap:6px;align-items:center;}
+.dua-cat-tag{background:rgba(61,220,132,.1);color:var(--green);border-radius:6px;padding:1px 6px;}
+.sukur-input-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:13px 14px;margin-bottom:14px;}
+.sukur-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;}
+.sukur-ico{font-size:16px;flex-shrink:0;margin-top:1px;}
+.sukur-txt{flex:1;font-size:13px;color:var(--t1);font-weight:600;line-height:1.5;}
+.sukur-date{font-size:9.5px;color:var(--t3);font-weight:800;margin-top:2px;}
+.sukur-summary{background:linear-gradient(135deg,rgba(61,220,132,.12),rgba(26,122,74,.04));border:1px solid rgba(61,220,132,.22);border-radius:16px;padding:14px 16px;margin-bottom:14px;text-align:center;}
+.sukur-summary .n{font-size:26px;font-weight:900;color:var(--green);}
+.sukur-summary .s{font-size:11px;color:var(--t3);font-weight:700;margin-top:2px;}
+
+/* ── MANEVİYAT TAKVİMİ ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-nav-btn{width:34px;height:34px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cal-nav-lbl{font-size:14px;font-weight:900;color:var(--t1);}
+.cal-wd-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:10px;color:var(--t3);font-weight:800;margin-bottom:6px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
+.cal-day{aspect-ratio:1;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--t2);font-weight:700;}
+.cal-day.empty{background:transparent;border:none;}
+.cal-day.today{border-color:var(--green2);border-width:2px;}
+.cal-day .dot{width:7px;height:7px;border-radius:50%;background:var(--border2);}
+.cal-day.g .dot{background:var(--green2);}
+.cal-day.y .dot{background:var(--gold);}
+.cal-legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:10px;color:var(--t3);font-weight:700;margin-bottom:14px;}
+.cal-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.cal-dot.g{background:var(--green2);}
+.cal-dot.y{background:var(--gold);}
+.cal-dot.n{background:var(--border2);}
+.cal-summary{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;}
+.cal-sum-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--t2);font-weight:700;}
+.cal-sum-row b{color:var(--green);font-size:15px;}
+
+/* ── UYKUYA DOĞRU giriş kartı ── */
+.sleep-entry-btn{width:100%;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(30,27,75,.15));border:1px solid rgba(99,102,241,.28);border-radius:17px;padding:13px 15px;margin-bottom:12px;display:flex;align-items:center;gap:12px;cursor:pointer;font-family:'Cairo',sans-serif;transition:all .2s;}
+.sleep-entry-btn:active{border-color:rgba(99,102,241,.5);}
+.sleep-entry-moon{font-size:26px;}
+.sleep-entry-txt{flex:1;text-align:left;display:flex;flex-direction:column;}
+.sleep-entry-txt .t{font-size:14px;font-weight:800;color:var(--t1);}
+.sleep-entry-txt .s{font-size:11px;color:var(--t3);font-weight:700;margin-top:1px;}
+
+/* ── UYKUYA DOĞRU tam ekran ── */
+.sleep-wrap{background:radial-gradient(ellipse at top,#141b34 0%,#05070d 65%)!important;position:relative;}
+.sleep-scroll{overflow-y:auto;flex:1;padding:0 20px max(40px,var(--safe-bot)) 20px;position:relative;z-index:1;}
+.sleep-hdr{display:flex;justify-content:flex-end;padding-top:max(14px,var(--safe-top));}
+.sleep-close{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#e8e8f0;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.sleep-hero{text-align:center;padding:6px 0 22px;}
+.sleep-moon{font-size:44px;filter:drop-shadow(0 0 18px rgba(129,140,248,.5));}
+.sleep-title{font-size:22px;font-weight:900;color:#f1f1f7;margin-top:8px;}
+.sleep-sub{font-size:12.5px;color:#8b8fae;font-weight:700;margin-top:3px;}
+.sleep-sect-lbl{font-size:10px;font-weight:800;color:#8b8fae;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;display:flex;align-items:center;gap:6px;}
+.sleep-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:14px 16px;}
+.sleep-ar{font-family:'Amiri',serif;font-size:18px;color:#e8c54a;text-align:center;line-height:1.9;}
+.sleep-tr{font-size:12px;color:#c4c6dc;text-align:center;font-weight:600;line-height:1.6;margin-top:8px;}
+.sleep-sure-hint{text-align:center;font-size:10px;color:#8b8fae;font-weight:700;margin-top:9px;}
+.sleep-tb-btn{width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.22),rgba(99,102,241,.05));border:2px solid rgba(129,140,248,.35);color:#f1f1f7;font-size:38px;font-weight:900;cursor:pointer;}
+.sleep-mini-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#c4c6dc;font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;padding:8px 14px;cursor:pointer;}
+.sleep-mini-btn.act{background:rgba(129,140,248,.22);border-color:rgba(129,140,248,.5);color:#c7cbff;}
+.sleep-sound-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.sleep-sound-btn{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:12px 10px;text-align:center;cursor:pointer;color:#c4c6dc;font-family:'Cairo',sans-serif;transition:all .2s;}
+.sleep-sound-btn .ic{font-size:20px;}
+.sleep-sound-btn .nm{font-size:11.5px;font-weight:800;margin-top:5px;}
+.sleep-sound-btn.playing{background:rgba(129,140,248,.18);border-color:rgba(129,140,248,.5);color:#e8e8f0;}
+.sleep-timer-row{display:flex;gap:8px;flex-wrap:wrap;}
+.sleep-timer-lbl{font-size:11px;color:#8b8fae;font-weight:700;margin-top:8px;text-align:center;}
+.sleep-dark-btn{width:100%;margin-top:22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;color:#c4c6dc;font-family:'Cairo',sans-serif;font-size:12.5px;font-weight:800;padding:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+.sleep-dim-ov{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 1.2s linear;z-index:5;}
+.sleep-dim-ov.active{pointer-events:auto;}
+
+/* ── VAKİT GİRİŞ BANNER'I ── */
+.vakit-banner{position:fixed;top:calc(var(--safe-top) + 10px);left:12px;right:12px;z-index:250;
+  background:linear-gradient(135deg,#123a24,#0c2418);border:1px solid rgba(61,220,132,.4);
+  border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);transform:translateY(-140%);opacity:0;
+  transition:transform .45s cubic-bezier(.2,.9,.3,1.2),opacity .3s;pointer-events:none;}
+.vakit-banner.show{transform:translateY(0);opacity:1;pointer-events:auto;}
+.vb-ico{font-size:26px;flex-shrink:0;}
+.vb-txt{flex:1;}
+.vb-title{font-size:13.5px;font-weight:900;color:#eafff2;}
+.vb-sub{font-size:11px;color:#a8e8bf;font-weight:700;margin-top:1px;}
+.vb-close{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#eafff2;font-size:11px;cursor:pointer;flex-shrink:0;}
+
+/* ── HUZUR KARTI (WIDGET) ── */
+.hz-share-btn{width:28px;height:28px;border-radius:50%;background:rgba(255,107,138,.14);border:1px solid rgba(255,107,138,.3);color:#ff6b8a;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.widget-box{width:100%;max-width:430px;background:var(--bg2);border:1px solid var(--border2);border-radius:26px 26px 0 0;padding:7px 22px max(44px,calc(var(--safe-bot)+36px));animation:su .3s cubic-bezier(.34,1.56,.64,1);}
+.widget-card{background:radial-gradient(ellipse at top,#16233f 0%,#070b16 75%);border:1px solid rgba(232,197,71,.25);border-radius:22px;padding:26px 22px;text-align:center;position:relative;overflow:hidden;}
+.widget-card::before{content:'';position:absolute;top:-40px;left:-40px;width:140px;height:140px;background:radial-gradient(circle,rgba(232,197,71,.12),transparent 70%);border-radius:50%;}
+.wc-app{font-size:12px;font-weight:900;color:#e8c54a;letter-spacing:.3px;}
+.wc-date{font-size:10.5px;color:#8b8fae;font-weight:700;margin-top:4px;text-transform:capitalize;}
+.wc-vakit{margin-top:18px;}
+.wc-vakit-name{font-size:15px;font-weight:800;color:#e8e8f0;}
+.wc-vakit-time{font-size:34px;font-weight:900;color:#fff;margin-top:4px;text-shadow:0 0 22px rgba(232,197,71,.4);}
+.wc-vakit-rem{font-size:11.5px;color:#a8b0d0;font-weight:700;margin-top:3px;}
+.wc-div{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);margin:18px 0 16px;}
+.wc-huzur-lbl{font-size:10px;font-weight:800;color:#ff8aa3;text-transform:uppercase;letter-spacing:1px;}
+.wc-huzur-txt{font-size:13px;color:#e8e8f0;font-weight:700;line-height:1.6;margin-top:8px;}
+.wc-huzur-tesbih{font-size:11px;color:#c7cbff;font-weight:800;margin-top:8px;}
+.widget-hint{text-align:center;font-size:11px;color:var(--t3);font-weight:700;margin-top:14px;}
+
+/* ── BERABERCE (Ailece Dua) ── */
+.fam-dua-card{background:linear-gradient(135deg,rgba(129,140,248,.12),rgba(232,197,71,.05));border:1px solid rgba(129,140,248,.28);border-radius:18px;padding:16px 17px;margin-bottom:16px;text-align:center;}
+.fam-dua-lbl{font-size:11px;font-weight:800;color:#a5abf5;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.fam-dua-txt{font-size:13.5px;color:var(--t1);font-weight:700;line-height:1.65;margin-bottom:12px;}
+.fam-dua-btn{width:100%;background:rgba(129,140,248,.16);border:1px solid rgba(129,140,248,.4);border-radius:13px;color:#c7cbff;font-family:'Cairo',sans-serif;font-size:12.5px;font-weight:800;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;}
+.fam-dua-btn.done{background:rgba(61,220,132,.16);border-color:rgba(61,220,132,.4);color:var(--green);}
+.fam-dua-done{font-size:11px;color:var(--t3);font-weight:700;margin-top:9px;}
+
 .star{position:absolute;border-radius:50%;background:#fff;animation:twk var(--d,3s) var(--dl,0s) infinite ease-in-out;}
 @keyframes twk{0%,100%{opacity:.1;}50%{opacity:.55;}}
 [data-theme="light"] .stars{display:none;}
@@ -589,6 +719,7 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
       </div>
       <div class="hdr-right">
         <button class="ico-btn" onclick="toggleTheme()" id="theme-btn"><i class="fa-solid fa-moon"></i></button>
+        <button class="ico-btn" style="color:#ff6b8a;border-color:rgba(255,107,138,.3)" onclick="showTab('huzur')"><i class="fa-solid fa-heart"></i></button>
         <button class="ico-btn" onclick="showTab('kible')"><i class="fa-solid fa-compass"></i></button>
         <button class="ico-btn gld" onclick="showTab('ayarlar')"><i class="fa-solid fa-gear"></i></button>
       </div>
@@ -611,6 +742,19 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
     <!-- VAKİTLER -->
     <div id="tab-vakit" class="tab show">
       <div class="tab-pad">
+        <div class="huzur-card" onclick="showTab('huzur')" style="cursor:pointer">
+          <div class="huzur-lbl" style="justify-content:space-between">
+            <span><i class="fa-solid fa-heart" style="color:#ff6b8a"></i> Bugünün Huzuru</span>
+            <button class="hz-share-btn" onclick="event.stopPropagation();openWidgetCard()"><i class="fa-solid fa-share-nodes"></i></button>
+          </div>
+          <div class="huzur-txt" id="hz-reminder">—</div>
+          <div class="huzur-tesbih" id="hz-tesbih-lbl"><i class="fa-solid fa-circle-dot"></i> Günün tesbihi</div>
+        </div>
+        <button class="sleep-entry-btn" onclick="openSleep()">
+          <span class="sleep-entry-moon">🌙</span>
+          <span class="sleep-entry-txt"><span class="t">Uykuya Doğru</span><span class="s">Huzurla uyu</span></span>
+          <i class="fa-solid fa-chevron-right" style="color:var(--t3)"></i>
+        </button>
         <div class="quote-card"><div class="qt" id="qt"></div><div class="qs" id="qs"></div></div>
         <div class="prog-card">
           <div class="prog-hdr"><span>Bugünkü İlerlemen</span><small id="prog-lbl">0/5</small></div>
@@ -825,6 +969,18 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
     <!-- TEKBİR / TEBİH SEKMESİ -->
     <div id="tab-tesbih" class="tab">
       <div class="tab-pad" style="display:flex;flex-direction:column;align-items:center;gap:16px">
+        <div class="sect"><i class="fa-solid fa-brain"></i> Akıllı Tesbihat</div>
+        <div id="smart-tb-progress" style="display:none;width:100%;background:linear-gradient(135deg,rgba(232,197,71,.12),rgba(232,197,71,.04));border:1px solid rgba(232,197,71,.25);border-radius:14px;padding:10px 14px;text-align:center;font-size:11.5px;color:var(--gold);font-weight:800"></div>
+        <div style="display:flex;gap:8px;width:100%">
+          <button class="add-grp-btn" style="margin-bottom:0;flex:1;padding:13px" onclick="startSmartTesbih('sabah')"><i class="fa-solid fa-sun" style="color:var(--gold)"></i> Sabah Tesbihatı</button>
+          <button class="add-grp-btn" style="margin-bottom:0;flex:1;padding:13px" onclick="startSmartTesbih('aksam')"><i class="fa-solid fa-moon" style="color:#818cf8"></i> Akşam Tesbihatı</button>
+        </div>
+        <button class="btn-outline" style="margin-top:0;width:100%" onclick="toggleCustomTbPanel()"><i class="fa-solid fa-list-check"></i> Kendi Tesbihatımı Oluştur</button>
+        <div id="custom-tb-panel" style="display:none;width:100%;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px">
+          <div id="custom-tb-checks" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+          <button class="btn-green full" onclick="startCustomTesbih()"><i class="fa-solid fa-play"></i> Listemi Başlat</button>
+        </div>
+
         <div class="sect"><i class="fa-solid fa-circle-dot"></i> Dijital Tesbih</div>
         <!-- Tesbih seçici -->
         <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;width:100%">
@@ -941,6 +1097,108 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
       </div>
     </div>
 
+    <!-- HUZUR SEKMESİ (Dua Defterim + Şükür Defteri) -->
+    <div id="tab-huzur" class="tab">
+      <div class="tab-pad" style="padding-bottom:90px">
+        <div class="sect" style="justify-content:space-between">
+          <span><i class="fa-solid fa-heart" style="color:#ff6b8a"></i> Huzur</span>
+          <span onclick="showTab('vakit')" style="cursor:pointer;color:var(--t2)"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <div class="hz-subtabs">
+          <button class="hz-sub-btn act" id="hzs-dua" onclick="showHuzurSub('dua',this)"><i class="fa-solid fa-hands-praying"></i> Dua Defterim</button>
+          <button class="hz-sub-btn" id="hzs-sukur" onclick="showHuzurSub('sukur',this)"><i class="fa-solid fa-seedling"></i> Şükür Defteri</button>
+          <button class="hz-sub-btn" id="hzs-takvim" onclick="showHuzurSub('takvim',this)"><i class="fa-solid fa-calendar-days"></i> Takvim</button>
+        </div>
+
+        <!-- DUA DEFTERİM -->
+        <div class="hz-body show" id="hzb-dua">
+          <button class="add-grp-btn" onclick="openAddDua()">
+            <i class="fa-solid fa-plus-circle" style="color:var(--green2)"></i> Yeni Dua Ekle
+          </button>
+          <div class="dua-cats" id="dua-cats"></div>
+          <div id="duadef-list"></div>
+        </div>
+
+        <!-- ŞÜKÜR DEFTERİ -->
+        <div class="hz-body" id="hzb-sukur">
+          <div class="sukur-summary">
+            <div class="n" id="sukur-month-n">0</div>
+            <div class="s" id="sukur-month-lbl">Bu ay şükür kaydı</div>
+          </div>
+          <div class="sukur-input-card">
+            <div class="fl">Bugün ne için şükrediyorsun?</div>
+            <textarea id="sukur-inp" placeholder="Bugün için minnettar olduğun bir şeyi yaz..." style="height:64px;margin-top:6px"></textarea>
+            <button class="btn-green full" onclick="addSukur()"><i class="fa-solid fa-plus"></i> Şükrü Kaydet</button>
+          </div>
+          <div id="sukur-list"></div>
+        </div>
+
+        <!-- MANEVİYAT TAKVİMİ -->
+        <div class="hz-body" id="hzb-takvim">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calPrev()"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="cal-nav-lbl" id="cal-nav-lbl">—</div>
+            <button class="cal-nav-btn" onclick="calNext()"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <div class="cal-wd-row">
+            <span>Pt</span><span>Sa</span><span>Ça</span><span>Pe</span><span>Cu</span><span>Ct</span><span>Pz</span>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-legend">
+            <span><i class="cal-dot g"></i> Tamamlandı</span>
+            <span><i class="cal-dot y"></i> Kısmen</span>
+            <span><i class="cal-dot n"></i> Henüz yok</span>
+          </div>
+          <div class="cal-summary" id="cal-summary"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dua Ekleme Modalı -->
+    <div class="modal-ov" id="dua-add-modal">
+      <div class="modal-box">
+        <div class="m-handle"></div>
+        <h3><i class="fa-solid fa-hands-praying"></i> Yeni Dua Ekle</h3>
+        <div class="fl">Başlık</div>
+        <input type="text" class="inp" id="dua-title-inp" placeholder="ör. Sınavım için dua" style="margin-top:5px">
+        <div class="fl" style="margin-top:2px">Kategori</div>
+        <select class="inp sel" id="dua-cat-inp" style="margin-top:5px">
+          <option value="Ailem">Ailem</option>
+          <option value="Çocuklarım">Çocuklarım</option>
+          <option value="İş">İş</option>
+          <option value="Sağlık">Sağlık</option>
+          <option value="Şükür">Şükür</option>
+          <option value="Genel" selected>Genel</option>
+        </select>
+        <div class="fl" style="margin-top:2px">Not (opsiyonel)</div>
+        <textarea id="dua-note-inp" placeholder="Dua ile ilgili kısa bir not..." style="height:60px;margin-top:5px"></textarea>
+        <button class="btn-green full" style="margin-top:10px" onclick="addDua()"><i class="fa-solid fa-plus"></i> Kaydet</button>
+        <button class="btn-outline" onclick="closeModal('dua-add-modal')">İptal</button>
+      </div>
+    </div>
+
+    <!-- Huzur Kartı (Widget) -->
+    <div class="modal-ov" id="widget-modal">
+      <div class="widget-box">
+        <div class="m-handle"></div>
+        <div class="widget-card" id="widget-card">
+          <div class="wc-app">🕌 Beraberce Huzura Doğru</div>
+          <div class="wc-date" id="wc-date">—</div>
+          <div class="wc-vakit">
+            <div class="wc-vakit-name" id="wc-vakit-name">—</div>
+            <div class="wc-vakit-time" id="wc-vakit-time">—:—</div>
+            <div class="wc-vakit-rem" id="wc-vakit-rem">—</div>
+          </div>
+          <div class="wc-div"></div>
+          <div class="wc-huzur-lbl">🌙 Bugünün Huzuru</div>
+          <div class="wc-huzur-txt" id="wc-huzur-txt">—</div>
+          <div class="wc-huzur-tesbih" id="wc-huzur-tesbih">—</div>
+        </div>
+        <div class="widget-hint"><i class="fa-solid fa-camera"></i> Ekran görüntüsü al, sevdiklerinle paylaş</div>
+        <button class="btn-outline" style="margin-top:12px" onclick="closeModal('widget-modal')">Kapat</button>
+      </div>
+    </div>
+
   </div><!-- /tab-wrap -->
 
   <!-- Bottom nav -->
@@ -979,6 +1237,14 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
   </div>
   <div class="gtab-wrap">
     <div id="gtab-gnamaz" class="gtab-body show">
+      <div class="fam-dua-card" id="fam-dua-card">
+        <div class="fam-dua-lbl">👨‍👩‍👧‍👦 Ailece Bugünün Duası</div>
+        <div class="fam-dua-txt" id="fam-dua-txt">—</div>
+        <button class="fam-dua-btn" id="fam-dua-btn" onclick="toggleFamilyDua()">
+          <i class="fa-solid fa-hand-holding-heart"></i> <span id="fam-dua-btn-txt">Bugün ailemiz için dua ettik</span>
+        </button>
+        <div class="fam-dua-done" id="fam-dua-done-lbl" style="display:none"></div>
+      </div>
       <button class="big-kil-btn" id="big-kil-btn" onclick="handleGroupKil()">
         <i class="fa-solid fa-check-double"></i><span id="big-kil-txt">NAMAZI KILDIM</span>
       </button>
@@ -1071,6 +1337,65 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
     </div>
     <div id="oku-audio-status" style="text-align:center;font-size:11px;color:var(--t3);margin-top:8px"></div>
   </div>
+</div>
+
+<!-- UYKUYA DOĞRU -->
+<div id="pg-sleep" class="page sleep-wrap">
+  <div class="sleep-dim-ov" id="sleep-dim-ov" onclick="wakeSleepScreen()"></div>
+  <div class="sleep-scroll">
+    <div class="sleep-hdr">
+      <button class="sleep-close" onclick="closeSleep()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sleep-hero">
+      <div class="sleep-moon">🌙</div>
+      <div class="sleep-title">İyi Geceler</div>
+      <div class="sleep-sub">Huzurla uyu</div>
+    </div>
+
+    <div class="sleep-sect-lbl"><i class="fa-solid fa-hands-praying"></i> Yatmadan Önce Dua</div>
+    <div class="sleep-card">
+      <div class="sleep-ar" id="sleep-dua-ar" dir="rtl"></div>
+      <div class="sleep-tr" id="sleep-dua-tr"></div>
+    </div>
+
+    <div class="sleep-sect-lbl"><i class="fa-solid fa-book-quran"></i> Kısa Sure</div>
+    <div class="sleep-card" id="sleep-sure-card" style="cursor:pointer" onclick="openSleepSure()">
+      <div class="sleep-ar" id="sleep-sure-ar" dir="rtl"></div>
+      <div class="sleep-tr" id="sleep-sure-tr"></div>
+      <div class="sleep-sure-hint"><i class="fa-solid fa-volume-high"></i> Sesli dinlemek için dokun</div>
+    </div>
+
+    <div class="sleep-sect-lbl"><i class="fa-solid fa-circle-dot"></i> Tesbih</div>
+    <div class="sleep-card" style="align-items:center;display:flex;flex-direction:column;gap:8px">
+      <button class="sleep-tb-btn" id="sleep-tb-btn" onclick="sleepTesbihTap()"><span id="sleep-tb-count">0</span></button>
+      <div style="display:flex;gap:8px">
+        <button class="sleep-mini-btn act" id="sleep-tbt-33" onclick="setSleepTbTarget(33)">33</button>
+        <button class="sleep-mini-btn" id="sleep-tbt-100" onclick="setSleepTbTarget(100)">100</button>
+        <button class="sleep-mini-btn" onclick="sleepTesbihReset()"><i class="fa-solid fa-rotate-left"></i></button>
+      </div>
+    </div>
+
+    <div class="sleep-sect-lbl"><i class="fa-solid fa-music"></i> Huzur Sesleri</div>
+    <div class="sleep-sound-grid" id="sleep-sound-grid"></div>
+
+    <div class="sleep-sect-lbl"><i class="fa-solid fa-clock"></i> Otomatik Kapanma</div>
+    <div class="sleep-timer-row" id="sleep-timer-row">
+      <button class="sleep-mini-btn" onclick="setSleepTimer(15,this)">15 dk</button>
+      <button class="sleep-mini-btn" onclick="setSleepTimer(30,this)">30 dk</button>
+      <button class="sleep-mini-btn" onclick="setSleepTimer(45,this)">45 dk</button>
+      <button class="sleep-mini-btn" onclick="setSleepTimer(0,this)">Kapalı</button>
+    </div>
+    <div class="sleep-timer-lbl" id="sleep-timer-lbl">Otomatik kapanma seçilmedi</div>
+
+    <button class="sleep-dark-btn" onclick="dimSleepScreen()"><i class="fa-solid fa-moon"></i> Ekranı Karart</button>
+  </div>
+</div>
+
+<!-- VAKİT GİRİŞ BANNER'I -->
+<div class="vakit-banner" id="vakit-banner">
+  <div class="vb-ico" id="vb-ico">🕌</div>
+  <div class="vb-txt"><div class="vb-title" id="vb-title">Namaz Vakti Girdi</div><div class="vb-sub" id="vb-sub">Hayırlı olsun 🤲</div></div>
+  <button class="vb-close" onclick="hideVakitBanner()"><i class="fa-solid fa-xmark"></i></button>
 </div>
 
 <!-- ALARM -->
@@ -1609,6 +1934,7 @@ function showTab(name,btn){
   if(name==='gruplar')renderGroups();
   if(name==='tesbih'&&typeof initTesbih==='function')initTesbih();
   if(name==='ramazan'&&typeof initRmz==='function')initRmz();
+  if(name==='huzur'&&typeof initHuzur==='function')initHuzur();
 }
 function showGTab(name,btn){
   document.querySelectorAll('.gtab-body').forEach(t=>t.classList.remove('show'));
@@ -1619,6 +1945,7 @@ function showGTab(name,btn){
   if(name==='gstats')renderStats();
   if(name==='guyeler')renderFullMem();
   if(name==='gorevler')renderGorevler();
+  if(name==='gnamaz')renderFamilyDua();
 }
 
 // ═══════════════════════════════════════════
@@ -1689,13 +2016,18 @@ function render(){
   document.getElementById('gunes-t').textContent=S.times.gunes||'—:—';
   renderExtraVakit();
   renderDots();renderList();renderPerAlarms();schedAlarms();
+  if(typeof renderHuzurGunluk==='function')renderHuzurGunluk();
   // Gerçek vakitleri arka planda güncelle (dondurmaz)
   maybeUpdateTimes().catch(()=>{});
 }
-function renderNext(){
+function nextVakitInfo(){
   const nm=nowMin();let found=null;
   for(const k of PK){const t=S.times[k];if(!t||t==='--:--')continue;const tm=toMin(t);if(tm>nm){const d=tm-nm;const dh=Math.floor(d/60),dm=d%60;found={n:PL[k],t,r:dh>0?dh+'sa '+dm+'dk kaldı':dm+' dk kaldı'};break;}}
   if(!found){const t=S.times.sabah||'05:00';const tm=toMin(t)+1440;const d=tm-nm;found={n:'Sabah',t,r:Math.floor(d/60)+'sa '+d%60+'dk (yarın)'};}
+  return found;
+}
+function renderNext(){
+  const found=nextVakitInfo();
   document.getElementById('nc-name').textContent=found.n+' Namazı';
   document.getElementById('nc-time').textContent=found.t;
   document.getElementById('nc-rem').innerHTML='<i class="fa-solid fa-clock"></i> '+found.r;
@@ -2086,6 +2418,7 @@ function openGroup(id){
   document.querySelectorAll('.gtab').forEach(b=>b.classList.remove('act'));
   document.querySelectorAll('.gtab')[0].classList.add('act');
   renderNamazTab(g);
+  renderFamilyDua();
   startGroupPolling();
 }
 function backToMain(){showPage('pg-main');stopGroupPolling();renderGroups();}
@@ -2182,9 +2515,11 @@ function loadTasks(groupId){
   if(t.day!==_taskDay()){
     t.day=_taskDay();t.kazaToday=0;
     t.dua.forEach(d=>d.done=false);
+    t.familyDua={day:_taskDay(),done:false};
   }
   if(!t.ezber)t.ezber=EZBER_DEFAULT.map((n,i)=>({id:'e'+i,name:n,done:false}));
   if(!t.dua)t.dua=DUA_DEFAULT.map((n,i)=>({id:'d'+i,name:n,done:false}));
+  if(!t.familyDua)t.familyDua={day:_taskDay(),done:false};
   return t;
 }
 function saveTasks(groupId,t){try{localStorage.setItem(_taskKey(groupId),JSON.stringify(t));}catch(e){}}
@@ -2243,6 +2578,56 @@ function kazaChange(delta){
     postGroupEvent(g.id,'🕌 '+(S.name||'Ben')+' bir kaza namazı kıldı (bugün: '+t.kazaToday+', toplam: '+t.kazaTotal+') 🤲');
   }
 }
+
+// ── BERABERCE: Ailece Bugünün Duası ──
+const FAMILY_DUAS=[
+  'Allah\'ım! Ailemizin arasına sevgi, saygı ve huzur ver; bizi birbirimize karşı merhametli kıl.',
+  'Rabbimiz! Eşlerimizi ve çocuklarımızı bize göz aydınlığı eyle, bizi hayırda birleştir.',
+  'Allah\'ım! Evimize bereket, kalplerimize huzur, aramıza muhabbet ver.',
+  'Rabbimiz! Ailemizi dünyada ve ahirette bir arada eyle, bizi birbirimizden ayırma.',
+  'Allah\'ım! Anne-babamıza, çocuklarımıza ve tüm ailemize sağlık, afiyet ve hidayet nasip eyle.',
+  'Rabbimiz! Evimizi ilim, edep ve sevgi yuvası eyle; bizi hayırlı evlatlar olarak büyüt.',
+  'Allah\'ım! Ailece Sana şükrediyoruz; nimetlerini üzerimizden eksik etme.',
+  'Rabbimiz! Aramızdaki bağı kuvvetlendir, dargınlıkları gönüllerimizden sil.',
+  'Allah\'ım! Ailemizi her türlü kötülükten ve nazardan koru, üzerimize rahmetini yağdır.',
+  'Rabbimiz! Bizi birbirimize sabırlı, şefkatli ve vefalı kıl; evimizi huzur meskeni eyle.',
+];
+function _famDuaIdx(){return (new Date().getDate()-1)%FAMILY_DUAS.length;}
+function renderFamilyDua(){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  const t=loadTasks(g.id);
+  const txtEl=document.getElementById('fam-dua-txt');
+  if(txtEl)txtEl.textContent=FAMILY_DUAS[_famDuaIdx()];
+  const btn=document.getElementById('fam-dua-btn');
+  const btnTxt=document.getElementById('fam-dua-btn-txt');
+  const doneLbl=document.getElementById('fam-dua-done-lbl');
+  if(!btn)return;
+  const isDone=t.familyDua&&t.familyDua.day===_taskDay()&&t.familyDua.done;
+  if(isDone){
+    btn.classList.add('done');
+    btnTxt.textContent='Bugün ailece dua edildi ✓';
+    doneLbl.style.display='block';
+    doneLbl.textContent=(t.familyDua.by?t.familyDua.by+' işaretledi · ':'')+'Allah kabul etsin 🤲';
+  }else{
+    btn.classList.remove('done');
+    btnTxt.textContent='Bugün ailemiz için dua ettik';
+    doneLbl.style.display='none';
+  }
+}
+function toggleFamilyDua(){
+  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  const t=loadTasks(g.id);
+  const already=t.familyDua&&t.familyDua.day===_taskDay()&&t.familyDua.done;
+  if(already){
+    t.familyDua={day:_taskDay(),done:false};
+    saveTasks(g.id,t);renderFamilyDua();
+    return;
+  }
+  t.familyDua={day:_taskDay(),done:true,by:S.name||'Bir üye'};
+  saveTasks(g.id,t);renderFamilyDua();confetti();
+  postGroupEvent(g.id,'🤲 '+(S.name||'Ben')+' bugün ailemiz için dua ettiğimizi işaretledi. Âmin! 👨‍👩‍👧‍👦');
+}
+
 function addEzber(){
   const inp=document.getElementById('ezber-inp');const name=inp.value.trim();if(!name)return;
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
@@ -3182,9 +3567,25 @@ function triggerAlarm(k,t){
   if(S.cfg.sound!=='silent')playSound(S.cfg.sound);
   fireVibration();
   fireAlarmNotification(lbl,t);
+  showVakitBanner(k,lbl,t);
   // Alarm çalarken titreşim periyodik olarak tekrarlasın (ses ile birlikte)
   if(vibrateLoop)clearInterval(vibrateLoop);
   vibrateLoop=setInterval(fireVibration,6500);
+}
+const VB_ICONS={imsak:'🌌',sabah:'🌅',ogle:'☀️',ikindi:'🌤️',aksam:'🌇',yatsi:'🌙'};
+let _vbTimer=null;
+function showVakitBanner(k,lbl,t){
+  const b=document.getElementById('vakit-banner');if(!b)return;
+  document.getElementById('vb-ico').textContent=VB_ICONS[k]||'🕌';
+  document.getElementById('vb-title').textContent=lbl+' Girdi';
+  document.getElementById('vb-sub').textContent=t+' · Hayırlı olsun 🤲';
+  b.classList.add('show');
+  clearTimeout(_vbTimer);
+  _vbTimer=setTimeout(hideVakitBanner,8000);
+}
+function hideVakitBanner(){
+  document.getElementById('vakit-banner')?.classList.remove('show');
+  clearTimeout(_vbTimer);
 }
 // Telefon titreşimi — desteklenmiyorsa sessizce geçilir (ör. iOS Safari)
 function fireVibration(){
@@ -3324,6 +3725,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   });
   // Yıldızları oluştur
   genStars();
+  // Maneviyat takvimi için bugünün kullanım kaydı
+  logActivityToday();
   // 1) Önce localStorage'dan anlık yükle (hızlı)
   try{_applyUser(JSON.parse(localStorage.getItem('cm6')||'{}'));}catch(e){}
   // Gruplar için de önbellekten anlık göster (sunucu yanıtı gelene kadar "boş" görünmesin)
@@ -3475,12 +3878,13 @@ let _tbCount=0,_tbRounds=0,_tbTarget=33,_tbMode='subhanallah';
 const _tbKey=()=>'cm6_tb_'+new Date().toDateString();
 function initTesbih(){
   try{const d=JSON.parse(localStorage.getItem(_tbKey())||'{}');_tbCount=d.count||0;_tbRounds=d.rounds||0;_tbTarget=d.target||33;_tbMode=d.mode||'subhanallah';}catch(e){}
-  renderTesbih();
+  renderTesbih();_renderSmartProgress();
 }
 function saveTesbih(){
   try{localStorage.setItem(_tbKey(),JSON.stringify({count:_tbCount,rounds:_tbRounds,target:_tbTarget,mode:_tbMode}));}catch(e){}
 }
 function setTesbihMode(mode,btn){
+  _smartQueue=null;_smartName='';_renderSmartProgress();
   _tbMode=mode;
   document.querySelectorAll('.tb-cat-btn').forEach(b=>b.classList.remove('act'));
   if(btn)btn.classList.add('act');
@@ -3490,6 +3894,7 @@ function setTesbihMode(mode,btn){
   saveTesbih();
 }
 function setTbTarget(n){
+  _smartQueue=null;_smartName='';_renderSmartProgress();
   _tbTarget=n;
   document.querySelectorAll('.tbt-btn').forEach(b=>b.classList.remove('act'));
   const el=document.getElementById('tbt-'+n);if(el)el.classList.add('act');
@@ -3501,6 +3906,25 @@ function tesbihTap(){
   if(navigator.vibrate)navigator.vibrate(12);
   // Hedef kontrolü
   if(_tbCount>=_tbTarget){
+    if(_smartQueue){
+      if(_smartIdx<_smartQueue.length-1){
+        _smartIdx++;
+        confetti();
+        if(navigator.vibrate)navigator.vibrate([30,20,30,20,60]);
+        _applySmartStep();
+        toast('Sıradaki zikre geçildi ✨');
+        return;
+      }else{
+        confetti();
+        toast('🎉 '+(SMART_LABELS[_smartName]||'Tesbihat')+' tamamlandı! Allah kabul etsin 🤲');
+        if(navigator.vibrate)navigator.vibrate([40,30,40,30,80]);
+        _smartQueue=null;_smartIdx=0;_smartName='';
+        _tbRounds++;_tbCount=0;
+        _renderSmartProgress();
+        renderTesbih();saveTesbih();
+        return;
+      }
+    }
     _tbRounds++;
     _tbCount=0;
     confetti();
@@ -3531,6 +3955,68 @@ function renderTesbih(){
   if(roundsEl)roundsEl.textContent=_tbRounds+' tur tamamlandı';
   if(targetLbl)targetLbl.textContent='Hedef: '+_tbTarget+' · '+_tbCount+'/'+_tbTarget;
 }
+
+// ── AKILLI TESBİHAT ──
+const SMART_SETS={
+  sabah:[{mode:'subhanallah',target:33},{mode:'alhamdulillah',target:33},{mode:'allahuakbar',target:34}],
+  aksam:[{mode:'estagfirullah',target:33},{mode:'salavat',target:33},{mode:'la_ilahe',target:34}],
+};
+const SMART_LABELS={sabah:'🌅 Sabah Tesbihatı',aksam:'🌙 Akşam Tesbihatı',custom:'📝 Kendi Tesbihatım'};
+let _smartQueue=null,_smartIdx=0,_smartName='';
+function _applySmartStep(){
+  const step=_smartQueue[_smartIdx];
+  _tbMode=step.mode;_tbTarget=step.target;_tbCount=0;
+  const m=TESBIH_MODES[step.mode]||TESBIH_MODES.subhanallah;
+  document.getElementById('tb-text').textContent=m.ar;
+  document.getElementById('tb-tr').textContent=m.tr;
+  document.querySelectorAll('.tb-cat-btn').forEach(b=>b.classList.remove('act'));
+  const catBtn=Array.from(document.querySelectorAll('.tb-cat-btn')).find(b=>b.getAttribute('onclick')?.includes("'"+step.mode+"'"));
+  catBtn?.classList.add('act');
+  document.querySelectorAll('.tbt-btn').forEach(b=>b.classList.remove('act'));
+  document.getElementById('tbt-'+step.target)?.classList.add('act');
+  renderTesbih();saveTesbih();_renderSmartProgress();
+}
+function _renderSmartProgress(){
+  const el=document.getElementById('smart-tb-progress');if(!el)return;
+  if(!_smartQueue){el.style.display='none';return;}
+  el.style.display='block';
+  el.textContent=`${SMART_LABELS[_smartName]||'Tesbihat'} · Adım ${_smartIdx+1}/${_smartQueue.length}`;
+}
+function startSmartTesbih(name){
+  _smartQueue=SMART_SETS[name];_smartIdx=0;_smartName=name;
+  _applySmartStep();
+  toast(SMART_LABELS[name]+' başladı 🤲');
+}
+function toggleCustomTbPanel(){
+  const p=document.getElementById('custom-tb-panel');
+  const show=p.style.display==='none';
+  p.style.display=show?'block':'none';
+  if(show)_renderCustomTbChecks();
+}
+function _renderCustomTbChecks(){
+  const el=document.getElementById('custom-tb-checks');if(!el)return;
+  let saved=[];
+  try{saved=JSON.parse(localStorage.getItem('cm6_custom_tb')||'[]');}catch(e){}
+  el.innerHTML='';
+  Object.keys(TESBIH_MODES).forEach(mode=>{
+    const m=TESBIH_MODES[mode];
+    const row=document.createElement('label');
+    row.style.cssText='display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--t2);font-weight:700;cursor:pointer';
+    row.innerHTML=`<input type="checkbox" data-mode="${mode}" ${saved.includes(mode)?'checked':''} style="width:17px;height:17px;accent-color:var(--green2)"> ${m.tr} <span style="color:var(--t3);font-weight:600;font-size:10.5px">(33 tekrar)</span>`;
+    el.appendChild(row);
+  });
+}
+function startCustomTesbih(){
+  const checked=Array.from(document.querySelectorAll('#custom-tb-checks input:checked')).map(c=>c.dataset.mode);
+  if(!checked.length){toast('En az bir zikir seçin.',false);return;}
+  try{localStorage.setItem('cm6_custom_tb',JSON.stringify(checked));}catch(e){}
+  _smartQueue=checked.map(mode=>({mode,target:33}));
+  _smartIdx=0;_smartName='custom';
+  _applySmartStep();
+  document.getElementById('custom-tb-panel').style.display='none';
+  toast('Kendi tesbihatın başladı 📝');
+}
+
 
 // ═══════════════════════════════════════════
 // RAMAZAN MODU
@@ -3646,7 +4132,434 @@ function toggleOruc(){
   saveRmz();renderRmz();
 }
 
-// ─── DOMContentLoaded ek başlatmalar ─────
+// ═══════════════════════════════════════════
+// HUZUR — Bugünün Huzuru / Dua Defterim / Şükür Defteri
+// ═══════════════════════════════════════════
+const HUZUR_DAYS=[
+  {r:'Bugün bir kişiyi mutlu edecek küçük bir iyilik yap.',t:'Sübhanallah'},
+  {r:'Ailenle birkaç dakika sohbet ederek gününe bereket kat.',t:'Elhamdülillah'},
+  {r:'Bugün kırdığın biri varsa gönlünü almayı unutma.',t:'Allahu Ekber'},
+  {r:'Bir yakınına dua ettiğini söylemek onu çok mutlu edebilir.',t:'İstiğfar'},
+  {r:'Bugün sahip olduklarına bir kez daha şükret.',t:'Sübhanallah'},
+  {r:'Kısa da olsa Kur\'an okumak için birkaç dakika ayır.',t:'Salavat'},
+  {r:'Bir muhtaca yardım etmek bugünü bereketlendirir.',t:'Elhamdülillah'},
+  {r:'Sevdiklerine güzel bir söz söylemek sadaka gibidir.',t:'La ilahe illallah'},
+  {r:'Bugün öfkelendiğinde sabretmeye niyet et.',t:'İstiğfar'},
+  {r:'Anne-babana veya büyüklerine dua etmeyi unutma.',t:'Allahu Ekber'},
+  {r:'Bir komşunu güler yüzle selamla.',t:'Sübhanallah'},
+  {r:'Bugün en az bir kişiye teşekkür et.',t:'Elhamdülillah'},
+  {r:'Zor bir günün olsa bile şükrü elden bırakma.',t:'Sübhanallah'},
+  {r:'Bugün gizlice küçük bir iyilik yap, kimseye söyleme.',t:'İstiğfar'},
+  {r:'Bir hadis veya ayet okuyup üzerine düşün.',t:'Salavat'},
+  {r:'Vaktinde kılınan namaz kalbe huzur verir.',t:'Allahu Ekber'},
+  {r:'Uzun zamandır aramadığın birini ara.',t:'Elhamdülillah'},
+  {r:'Bugün bir hayvana veya bitkiye şefkat göster.',t:'Sübhanallah'},
+  {r:'Kalbini kırdığın biri varsa helalleş.',t:'İstiğfar'},
+  {r:'Bugün sabrınla imtihan olduğunda Allah\'ı hatırla.',t:'La ilahe illallah'},
+  {r:'Bir fakire veya öğrenciye destek olmayı düşün.',t:'Elhamdülillah'},
+  {r:'Sofrana oturduğunda besmele çekmeyi ve şükretmeyi unutma.',t:'Sübhanallah'},
+  {r:'Bugün kimseyi arkasından konuşma, dilini koru.',t:'İstiğfar'},
+  {r:'Peygamberimize salavat getirerek güne başla.',t:'Salavat'},
+  {r:'Bir kitap veya ilim meclisine birkaç dakika ayır.',t:'Allahu Ekber'},
+  {r:'Bugün gülümsemenin de sadaka olduğunu hatırla.',t:'Sübhanallah'},
+  {r:'Bir yetime veya kimsesize dua et.',t:'Elhamdülillah'},
+  {r:'Vakit namazlarını cemaatle kılmayı dene.',t:'Allahu Ekber'},
+  {r:'Bugün kendine de şefkatli davran, kendini yorma.',t:'İstiğfar'},
+  {r:'Günü bir şükür duasıyla kapat.',t:'Elhamdülillah'},
+  {r:'Ailece bugün için birlikte dua edin.',t:'La ilahe illallah'},
+];
+function renderHuzurGunluk(){
+  const el=document.getElementById('hz-reminder');if(!el)return;
+  const idx=(new Date().getDate()-1)%HUZUR_DAYS.length;
+  const h=HUZUR_DAYS[idx];
+  el.textContent=h.r;
+  const tl=document.getElementById('hz-tesbih-lbl');
+  if(tl)tl.innerHTML='<i class="fa-solid fa-circle-dot"></i> Günün tesbihi: '+h.t;
+}
+
+// ── Huzur Kartı (paylaşılabilir widget) ──
+function openWidgetCard(){
+  if(!S.lat){toast('Önce şehir/konum seçmelisin.',false);return;}
+  const now=new Date();
+  document.getElementById('wc-date').textContent=now.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const found=nextVakitInfo();
+  document.getElementById('wc-vakit-name').textContent=found.n+' Namazı';
+  document.getElementById('wc-vakit-time').textContent=found.t;
+  document.getElementById('wc-vakit-rem').textContent=found.r;
+  const idx=(now.getDate()-1)%HUZUR_DAYS.length;
+  const h=HUZUR_DAYS[idx];
+  document.getElementById('wc-huzur-txt').textContent=h.r;
+  document.getElementById('wc-huzur-tesbih').textContent='📿 Günün tesbihi: '+h.t;
+  openModal('widget-modal');
+}
+
+// ── DUA DEFTERİM ──
+const DUA_KEY='cm6_duas';
+let _duaData=[],_duaFilter='Tümü';
+const DUA_CATS=['Tümü','Ailem','Çocuklarım','İş','Sağlık','Şükür','Genel'];
+function loadDua(){try{_duaData=JSON.parse(localStorage.getItem(DUA_KEY)||'[]');}catch(e){_duaData=[];}}
+function saveDua(){try{localStorage.setItem(DUA_KEY,JSON.stringify(_duaData));}catch(e){}}
+function openAddDua(){
+  document.getElementById('dua-title-inp').value='';
+  document.getElementById('dua-cat-inp').value='Genel';
+  document.getElementById('dua-note-inp').value='';
+  openModal('dua-add-modal');
+}
+function addDua(){
+  const title=document.getElementById('dua-title-inp').value.trim();
+  const cat=document.getElementById('dua-cat-inp').value;
+  const note=document.getElementById('dua-note-inp').value.trim();
+  if(!title){toast('Lütfen bir başlık yazın.',false);return;}
+  _duaData.unshift({id:'d'+Date.now().toString(36),title,cat,note,done:false,date:new Date().toISOString()});
+  saveDua();closeModal('dua-add-modal');renderDuaCats();renderDuaList();toast('Dua eklendi 🤲');
+}
+function toggleDuaDef(id){
+  const d=_duaData.find(x=>x.id===id);if(!d)return;
+  d.done=!d.done;
+  saveDua();renderDuaList();
+  if(d.done)toast('Allah kabul etsin 🤲');
+}
+function delDua(id){_duaData=_duaData.filter(x=>x.id!==id);saveDua();renderDuaCats();renderDuaList();toast('Silindi.');}
+function setDuaFilter(cat,btn){
+  _duaFilter=cat;
+  document.querySelectorAll('.dua-cat-chip').forEach(b=>b.classList.remove('act'));
+  if(btn)btn.classList.add('act');
+  renderDuaList();
+}
+function renderDuaCats(){
+  const el=document.getElementById('dua-cats');if(!el)return;
+  const used=['Tümü',...new Set(_duaData.map(d=>d.cat))];
+  const cats=DUA_CATS.filter(c=>used.includes(c));
+  el.innerHTML='';
+  cats.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='dua-cat-chip'+(c===_duaFilter?' act':'');
+    b.textContent=c;
+    b.onclick=()=>setDuaFilter(c,b);
+    el.appendChild(b);
+  });
+}
+function renderDuaList(){
+  const el=document.getElementById('duadef-list');if(!el)return;
+  el.innerHTML='';
+  const list=_duaData.filter(d=>_duaFilter==='Tümü'||d.cat===_duaFilter);
+  if(!list.length){
+    const h=document.createElement('div');
+    h.style.cssText='text-align:center;padding:18px 4px;color:var(--t3);font-size:11.5px';
+    h.textContent=_duaData.length?'Bu kategoride kayıtlı dua yok.':'Henüz dua eklemedin. Yukarıdan ilk duanı ekle.';
+    el.appendChild(h);return;
+  }
+  list.forEach(d=>{
+    const it=document.createElement('div');
+    it.className='dua-item'+(d.done?' done':'');
+    it.innerHTML=`<button class="dua-check ${d.done?'on':''}" onclick="toggleDuaDef('${d.id}')"><i class="fa-solid fa-check"></i></button>
+      <div class="dua-info"><div class="dua-title">${escHtml(d.title)}</div>
+      <div class="dua-meta"><span class="dua-cat-tag">${escHtml(d.cat)}</span>${d.note?escHtml(d.note.length>30?d.note.slice(0,30)+'…':d.note):''}</div></div>
+      <button class="lib-del" onclick="delDua('${d.id}')"><i class="fa-solid fa-trash"></i></button>`;
+    el.appendChild(it);
+  });
+}
+
+// ── ŞÜKÜR DEFTERİ ──
+const SUKUR_KEY='cm6_sukur';
+let _sukurData=[];
+function loadSukur(){try{_sukurData=JSON.parse(localStorage.getItem(SUKUR_KEY)||'[]');}catch(e){_sukurData=[];}}
+function saveSukur(){try{localStorage.setItem(SUKUR_KEY,JSON.stringify(_sukurData));}catch(e){}}
+function addSukur(){
+  const inp=document.getElementById('sukur-inp');
+  const txt=inp.value.trim();
+  if(!txt){toast('Önce bir şükür yazın.',false);return;}
+  _sukurData.unshift({id:'s'+Date.now().toString(36),txt,date:new Date().toISOString()});
+  saveSukur();inp.value='';renderSukurList();confetti();toast('Şükrün kaydedildi 🌿');
+}
+function delSukur(id){_sukurData=_sukurData.filter(x=>x.id!==id);saveSukur();renderSukurList();}
+function renderSukurList(){
+  const el=document.getElementById('sukur-list');if(!el)return;
+  el.innerHTML='';
+  const now=new Date();
+  const monthCount=_sukurData.filter(s=>{const d=new Date(s.date);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();}).length;
+  const mn=document.getElementById('sukur-month-n');if(mn)mn.textContent=monthCount;
+  const ml=document.getElementById('sukur-month-lbl');if(ml)ml.textContent=monthCount+' kayıt · Bu ay şükrettiklerin';
+  if(!_sukurData.length){
+    const h=document.createElement('div');
+    h.style.cssText='text-align:center;padding:18px 4px;color:var(--t3);font-size:11.5px';
+    h.textContent='Henüz şükür kaydın yok. Bugün ne için şükrettiğini yazarak başla.';
+    el.appendChild(h);return;
+  }
+  _sukurData.slice(0,60).forEach(s=>{
+    const d=new Date(s.date);
+    const dl=d.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+    const it=document.createElement('div');
+    it.className='sukur-item';
+    it.innerHTML=`<div class="sukur-ico">🌿</div><div style="flex:1"><div class="sukur-txt">${escHtml(s.txt)}</div><div class="sukur-date">${dl}</div></div>
+      <button class="lib-del" onclick="delSukur('${s.id}')"><i class="fa-solid fa-trash"></i></button>`;
+    el.appendChild(it);
+  });
+}
+
+// ── HUZUR sekmesi giriş ──
+let _huzurInit=false;
+function initHuzur(){
+  if(!_huzurInit){loadDua();loadSukur();_huzurInit=true;}
+  renderDuaCats();renderDuaList();renderSukurList();
+}
+function showHuzurSub(name,btn){
+  document.querySelectorAll('.hz-body').forEach(b=>b.classList.remove('show'));
+  document.getElementById('hzb-'+name)?.classList.add('show');
+  document.querySelectorAll('.hz-sub-btn').forEach(b=>b.classList.remove('act'));
+  (btn||document.getElementById('hzs-'+name))?.classList.add('act');
+  if(name==='takvim')renderCalendar();
+}
+
+// ── MANEVİYAT TAKVİMİ ──
+const ACT_KEY='cm6_activity_days';
+const AY_ADLARI=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function dayKey(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function logActivityToday(){
+  try{
+    const arr=JSON.parse(localStorage.getItem(ACT_KEY)||'[]');
+    const k=dayKey(new Date());
+    if(!arr.includes(k)){arr.push(k);localStorage.setItem(ACT_KEY,JSON.stringify(arr));}
+  }catch(e){}
+}
+function _tesbihatDaySet(){
+  const set=new Set();
+  try{
+    Object.keys(localStorage).forEach(k=>{
+      if(!k.startsWith('cm6_tb_'))return;
+      const d=new Date(k.slice(7));
+      if(isNaN(d))return;
+      let v={};try{v=JSON.parse(localStorage.getItem(k)||'{}');}catch(e){}
+      if((v.count||0)>0||(v.rounds||0)>0)set.add(dayKey(d));
+    });
+  }catch(e){}
+  return set;
+}
+let _calYear=new Date().getFullYear(),_calMonth=new Date().getMonth();
+function calPrev(){_calMonth--;if(_calMonth<0){_calMonth=11;_calYear--;}renderCalendar();}
+function calNext(){_calMonth++;if(_calMonth>11){_calMonth=0;_calYear++;}renderCalendar();}
+function renderCalendar(){
+  const lbl=document.getElementById('cal-nav-lbl');if(!lbl)return;
+  lbl.textContent=AY_ADLARI[_calMonth]+' '+_calYear;
+  const tbSet=_tesbihatDaySet();
+  let actSet=new Set();try{actSet=new Set(JSON.parse(localStorage.getItem(ACT_KEY)||'[]'));}catch(e){}
+  const duaByDay={},sukurByDay={};
+  (_duaData||[]).forEach(d=>{const k=dayKey(new Date(d.date));duaByDay[k]=(duaByDay[k]||0)+1;});
+  (_sukurData||[]).forEach(s=>{const k=dayKey(new Date(s.date));sukurByDay[k]=(sukurByDay[k]||0)+1;});
+
+  const first=new Date(_calYear,_calMonth,1);
+  const daysInMonth=new Date(_calYear,_calMonth+1,0).getDate();
+  let startWd=first.getDay();startWd=startWd===0?6:startWd-1; // Pazartesi başlangıç
+  const grid=document.getElementById('cal-grid');grid.innerHTML='';
+  for(let i=0;i<startWd;i++){const e=document.createElement('div');e.className='cal-day empty';grid.appendChild(e);}
+  const today=new Date();
+  let usedDays=0,tbDays=0,duaDays=0,sukurDays=0;
+  for(let day=1;day<=daysInMonth;day++){
+    const dObj=new Date(_calYear,_calMonth,day);
+    const k=dayKey(dObj);
+    const hasTb=tbSet.has(k),hasDua=!!duaByDay[k],hasSukur=!!sukurByDay[k],hasAct=actSet.has(k);
+    if(hasAct)usedDays++;if(hasTb)tbDays++;if(hasDua)duaDays++;if(hasSukur)sukurDays++;
+    const score=[hasTb,hasDua,hasSukur].filter(Boolean).length;
+    const isFuture=dObj>today;
+    const cell=document.createElement('div');
+    cell.className='cal-day'+(isFuture?'':score>=2?' g':score===1?' y':'')+
+      (dObj.toDateString()===today.toDateString()?' today':'');
+    cell.innerHTML=`${day}<span class="dot"></span>`;
+    grid.appendChild(cell);
+  }
+  const sum=document.getElementById('cal-summary');
+  sum.innerHTML=`
+    <div class="cal-sum-row"><span>📱 Uygulama kullanılan gün</span><b>${usedDays}</b></div>
+    <div class="cal-sum-row"><span>📿 Tesbihat yapılan gün</span><b>${tbDays}</b></div>
+    <div class="cal-sum-row"><span>🤲 Dua eklenen gün</span><b>${duaDays}</b></div>
+    <div class="cal-sum-row"><span>❤️ Şükür kaydedilen gün</span><b>${sukurDays}</b></div>`;
+}
+
+// ═══════════════════════════════════════════
+// UYKUYA DOĞRU
+// ═══════════════════════════════════════════
+const SLEEP_DUAS=[
+  {ar:'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا',tr:'Allah\'ım! Senin adınla ölür (uyur) ve dirilirim (uyanırım).'},
+  {ar:'اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ',tr:'Allah\'ım! Kullarını dirilteceğin gün beni azabından koru.'},
+  {ar:'اللَّهُمَّ أَسْلَمْتُ نَفْسِي إِلَيْكَ وَفَوَّضْتُ أَمْرِي إِلَيْكَ',tr:'Allah\'ım! Nefsimi Sana teslim ettim, işimi Sana havale ettim.'},
+  {ar:'الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَكَفَانَا وَآوَانَا',tr:'Bizi doyuran, sulayan, ihtiyacımızı gideren ve barındıran Allah\'a hamdolsun.'},
+];
+let _sleepInit=false,_sleepAmbCtx=null,_sleepAmbNodes=null,_sleepPlayingId=null,_sleepTimerInt=null,_sleepEndTs=0;
+const SLEEP_SOUNDS=[
+  {id:'ney',name:'Ney',ico:'🎵'},
+  {id:'rain',name:'Yağmur',ico:'🌧️'},
+  {id:'water',name:'Su Sesi',ico:'💧'},
+  {id:'nature',name:'Doğa',ico:'🌿'},
+];
+function openSleep(){
+  showPage('pg-sleep');
+  if(!_sleepInit){
+    const d=SLEEP_DUAS[new Date().getDate()%SLEEP_DUAS.length];
+    document.getElementById('sleep-dua-ar').textContent=d.ar;
+    document.getElementById('sleep-dua-tr').textContent=d.tr;
+    const shortSures=SURE_LIB.filter(s=>['s112','s113','s114'].includes(s.id));
+    const su=shortSures[new Date().getDate()%shortSures.length]||SURE_LIB[1];
+    _sleepSureId=su.id;
+    document.getElementById('sleep-sure-ar').textContent=su.ar;
+    document.getElementById('sleep-sure-tr').textContent=su.title;
+    renderSleepSoundGrid();
+    loadSleepTesbih();
+    _sleepInit=true;
+  }
+  updateSleepTesbihUI();
+}
+let _sleepSureId=null;
+function openSleepSure(){if(_sleepSureId)openOku('sure',_sleepSureId);}
+function closeSleep(){
+  stopSleepAmbient();
+  clearSleepTimerInterval();
+  showPage('pg-main');
+}
+function wakeSleepScreen(){
+  const ov=document.getElementById('sleep-dim-ov');
+  ov.classList.remove('active');ov.style.opacity=0;
+  clearSleepTimerInterval();
+  document.getElementById('sleep-timer-lbl').textContent='Otomatik kapanma seçilmedi';
+  document.querySelectorAll('#sleep-timer-row .sleep-mini-btn').forEach(b=>b.classList.remove('act'));
+}
+function dimSleepScreen(){
+  const ov=document.getElementById('sleep-dim-ov');
+  ov.classList.add('active');ov.style.opacity=0.94;
+}
+
+// ── Tesbih (sade) ──
+const SLEEP_TB_KEY='cm6_sleep_tb';
+let _sleepTbCount=0,_sleepTbTarget=33;
+function loadSleepTesbih(){
+  try{const d=JSON.parse(localStorage.getItem(SLEEP_TB_KEY)||'{}');_sleepTbCount=d.count||0;_sleepTbTarget=d.target||33;}catch(e){}
+}
+function saveSleepTesbih(){try{localStorage.setItem(SLEEP_TB_KEY,JSON.stringify({count:_sleepTbCount,target:_sleepTbTarget}));}catch(e){}}
+function sleepTesbihTap(){
+  _sleepTbCount++;
+  if(navigator.vibrate)navigator.vibrate(12);
+  if(_sleepTbCount>=_sleepTbTarget){_sleepTbCount=0;toast('Tur tamamlandı 📿');}
+  saveSleepTesbih();updateSleepTesbihUI();
+}
+function sleepTesbihReset(){_sleepTbCount=0;saveSleepTesbih();updateSleepTesbihUI();}
+function setSleepTbTarget(t){
+  _sleepTbTarget=t;_sleepTbCount=0;saveSleepTesbih();
+  document.querySelectorAll('#pg-sleep .sleep-mini-btn[id^="sleep-tbt-"]').forEach(b=>b.classList.remove('act'));
+  document.getElementById('sleep-tbt-'+t)?.classList.add('act');
+  updateSleepTesbihUI();
+}
+function updateSleepTesbihUI(){
+  const c=document.getElementById('sleep-tb-count');if(c)c.textContent=_sleepTbCount;
+}
+
+// ── Huzur Sesleri (prosedürel, internetsiz) ──
+function renderSleepSoundGrid(){
+  const grid=document.getElementById('sleep-sound-grid');if(!grid)return;
+  grid.innerHTML='';
+  SLEEP_SOUNDS.forEach(s=>{
+    const b=document.createElement('button');
+    b.className='sleep-sound-btn';b.id='ssnd-'+s.id;
+    b.innerHTML=`<div class="ic">${s.ico}</div><div class="nm">${s.name}</div>`;
+    b.onclick=()=>toggleSleepAmbient(s.id);
+    grid.appendChild(b);
+  });
+}
+function toggleSleepAmbient(id){
+  if(_sleepPlayingId===id){stopSleepAmbient();return;}
+  startSleepAmbient(id);
+}
+function startSleepAmbient(id){
+  stopSleepAmbient();
+  try{
+    const ctx=_sleepAmbCtx||(_sleepAmbCtx=new(window.AudioContext||window.webkitAudioContext)());
+    const master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
+    master.gain.linearRampToValueAtTime(0.5,ctx.currentTime+1.5);
+    const bufSize=ctx.sampleRate*2;
+    const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++)data[i]=Math.random()*2-1;
+    const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
+    let filt,filt2;
+    if(id==='rain'){
+      filt=ctx.createBiquadFilter();filt.type='highpass';filt.frequency.value=1200;
+      filt2=ctx.createBiquadFilter();filt2.type='lowpass';filt2.frequency.value=6500;
+      src.connect(filt);filt.connect(filt2);filt2.connect(master);
+    }else if(id==='water'){
+      filt=ctx.createBiquadFilter();filt.type='bandpass';filt.frequency.value=700;filt.Q.value=0.6;
+      filt2=ctx.createBiquadFilter();filt2.type='lowpass';filt2.frequency.value=2200;
+      src.connect(filt);filt.connect(filt2);filt2.connect(master);
+      const lfo=ctx.createOscillator();lfo.frequency.value=0.18;
+      const lfoG=ctx.createGain();lfoG.gain.value=300;
+      lfo.connect(lfoG);lfoG.connect(filt.frequency);lfo.start();
+      _sleepAmbNodes={extra:[lfo]};
+    }else if(id==='nature'){
+      filt=ctx.createBiquadFilter();filt.type='lowpass';filt.frequency.value=900;
+      filt2=ctx.createBiquadFilter();filt2.type='highpass';filt2.frequency.value=180;
+      src.connect(filt);filt.connect(filt2);filt2.connect(master);
+    }else if(id==='ney'){
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(0,ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0.22,ctx.currentTime+2);
+      const o=ctx.createOscillator();o.type='sine';o.frequency.value=220;
+      const vib=ctx.createOscillator();vib.frequency.value=4.6;
+      const vibG=ctx.createGain();vibG.gain.value=2.4;
+      vib.connect(vibG);vibG.connect(o.frequency);vib.start();
+      const nf=ctx.createBiquadFilter();nf.type='bandpass';nf.frequency.value=350;nf.Q.value=1.2;
+      o.connect(nf);nf.connect(master);o.start();
+      filt=ctx.createBiquadFilter();filt.type='lowpass';filt.frequency.value=100; // dummy unused branch for noise src
+      src.connect(filt);const zeroG=ctx.createGain();zeroG.gain.value=0;filt.connect(zeroG);zeroG.connect(master);
+      _sleepAmbNodes={osc:o,vib,extra:[o,vib]};
+    }
+    src.start();
+    _sleepAmbNodes=Object.assign({src,master},_sleepAmbNodes||{});
+    _sleepPlayingId=id;
+    document.querySelectorAll('.sleep-sound-btn').forEach(b=>b.classList.remove('playing'));
+    document.getElementById('ssnd-'+id)?.classList.add('playing');
+  }catch(e){toast('Ses başlatılamadı.',false);}
+}
+function stopSleepAmbient(){
+  if(_sleepAmbNodes){
+    try{
+      const g=_sleepAmbNodes.master;
+      if(g&&_sleepAmbCtx){g.gain.cancelScheduledValues(_sleepAmbCtx.currentTime);g.gain.setTargetAtTime(0,_sleepAmbCtx.currentTime,0.3);}
+      setTimeout(()=>{
+        try{_sleepAmbNodes.src&&_sleepAmbNodes.src.stop();}catch(e){}
+        (_sleepAmbNodes.extra||[]).forEach(n=>{try{n.stop();}catch(e){}});
+      },400);
+    }catch(e){}
+  }
+  _sleepAmbNodes=null;_sleepPlayingId=null;
+  document.querySelectorAll('.sleep-sound-btn').forEach(b=>b.classList.remove('playing'));
+}
+
+// ── Otomatik kapanma ──
+function setSleepTimer(minutes,btn){
+  document.querySelectorAll('#sleep-timer-row .sleep-mini-btn').forEach(b=>b.classList.remove('act'));
+  if(btn)btn.classList.add('act');
+  clearSleepTimerInterval();
+  const ov=document.getElementById('sleep-dim-ov');ov.classList.remove('active');ov.style.opacity=0;
+  if(!minutes){document.getElementById('sleep-timer-lbl').textContent='Otomatik kapanma seçilmedi';return;}
+  _sleepEndTs=Date.now()+minutes*60000;
+  updateSleepTimerLbl();
+  _sleepTimerInt=setInterval(updateSleepTimerLbl,1000);
+}
+function clearSleepTimerInterval(){if(_sleepTimerInt){clearInterval(_sleepTimerInt);_sleepTimerInt=null;}}
+function updateSleepTimerLbl(){
+  const rem=Math.max(0,Math.round((_sleepEndTs-Date.now())/1000));
+  const lbl=document.getElementById('sleep-timer-lbl');
+  const ov=document.getElementById('sleep-dim-ov');
+  if(rem<=0){
+    lbl.textContent='Uykun bereketli olsun 🌙';
+    stopSleepAmbient();
+    ov.classList.add('active');ov.style.opacity=0.94;
+    clearSleepTimerInterval();
+    return;
+  }
+  const mm=Math.floor(rem/60),ss=rem%60;
+  lbl.textContent=`Kalan süre: ${mm}:${ss<10?'0':''}${ss}`;
+  if(rem<=300){ov.classList.add('active');ov.style.opacity=String(Math.min(0.9,(300-rem)/300*0.9));}
+}
+
+
 document.addEventListener('DOMContentLoaded',()=>{
   // SW kaydet
   registerSW();
