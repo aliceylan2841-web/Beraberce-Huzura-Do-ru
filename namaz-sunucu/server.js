@@ -409,7 +409,13 @@ app.get('/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOSt
 // express.static zaten "index.html" dosyasını "/" adresinde otomatik servis eder,
 // bu yüzden ayrı bir app.get('/') route'una gerek yok (önceden var olan
 // "index_server.html" dosyası mevcut olmadığı için hataya sebep oluyordu).
-app.use(express.static(path.join(__dirname, 'namaz-sunucu')));
+//
+// ÖNEMLİ: express.static VARSAYILAN olarak nokta ile başlayan klasörleri
+// (".well-known" gibi) yoksayar. Android TWA (PWABuilder APK) doğrulaması
+// için gereken assetlinks.json burada servis edilmezse, uygulama Chrome
+// Custom Tab gibi açılır ve adres çubuğu görünmeye devam eder. Bu yüzden
+// ".well-known" klasörünü AYRICA ve "dotfiles: allow" ile servis ediyoruz.
+app.use('/.well-known', express.static(path.join(__dirname, '.well-known'), { dotfiles: 'allow' }));
 app.use(express.static(__dirname));
 
 // ── Sunucuyu başlat ──────────────────────────────────
