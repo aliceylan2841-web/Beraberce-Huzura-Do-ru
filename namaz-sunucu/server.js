@@ -406,12 +406,11 @@ Eğer başlık tanınmıyorsa veya emin değilsen, {"error":"bulunamadı"} dönd
 app.get('/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
 // ── ARAYÜZ (HTML) SERVİS ETME AYARI ─────────────
+// express.static zaten "index.html" dosyasını "/" adresinde otomatik servis eder,
+// bu yüzden ayrı bir app.get('/') route'una gerek yok (önceden var olan
+// "index_server.html" dosyası mevcut olmadığı için hataya sebep oluyordu).
 app.use(express.static(path.join(__dirname, 'namaz-sunucu')));
 app.use(express.static(__dirname));
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'namaz-sunucu', 'index_server.html'));
-});
 
 // ── Sunucuyu başlat ──────────────────────────────────
 app.listen(PORT, () => {
