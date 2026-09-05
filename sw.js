@@ -50,8 +50,8 @@ self.addEventListener('push', e => {
   e.waitUntil(
     self.registration.showNotification(data.title || 'Namaz Vakti', {
       body: data.body || 'Namaz vakti geldi!',
-      icon: data.icon || '/icon-192.png',
-      badge: '/badge-72.png',
+      icon: data.icon || '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
       tag: data.tag || 'namaz',
       requireInteraction: true,
       actions: [
