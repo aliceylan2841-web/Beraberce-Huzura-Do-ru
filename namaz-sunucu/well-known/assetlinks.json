@@ -1,1 +1,42 @@
-
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.aliceylan2841_web.twa",
+      "sha256_cert_fingerprints": ["64:E2:4D:87:CA:B7:D3:B0:D7:31:E7:6C:DF:59:E2:46:B2:BF:3E:98:2D:02:8B:40:C8:F6:04:24:6E:F6:0E:92"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.acamay.matematik",
+      "sha256_cert_fingerprints": ["B5:A9:BC:39:A5:31:57:3E:20:C9:42:CB:69:3C:32:ED:8A:EA:E1:95:E8:70:A5:6D:48:BC:C4:06:9E:41:31:8E"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.acamay.mesaiv2",
+      "sha256_cert_fingerprints": ["F6:C8:F0:C5:CC:9A:07:A9:B0:9D:DF:85:0E:23:91:D7:B1:EE:54:4E:29:EE:75:91:A1:4D:51:02:94:49:8F:3A"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.acamay.personeltakip",
+      "sha256_cert_fingerprints": ["A4:A2:89:78:11:7C:E0:F3:C8:87:2D:38:B3:ED:21:8A:12:93:8F:62:98:EC:2B:9D:70:AD:63:96:94:17:2C:B9"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.onrender.beraberce_huzura_do_ru.twa",
+      "sha256_cert_fingerprints": ["4B:A2:28:4D:D0:99:1A:DA:7E:9B:74:09:6B:80:03:BB:97:47:52:9A:D5:E7:BB:7B:05:3A:D2:1F:8B:C8:7A:3B"]
+    }
+  }
+]
