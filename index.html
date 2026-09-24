@@ -265,14 +265,14 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
 .ico-btn{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--t2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .ico-btn.gld{color:var(--gold);border-color:rgba(232,197,71,.3);}
 [data-theme="light"] .ico-btn{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.1);}
-.next-card{background:linear-gradient(135deg,rgba(61,220,132,.14),rgba(26,122,74,.07));border:1px solid rgba(61,220,132,.22);border-radius:20px;padding:14px 16px;position:relative;overflow:hidden;}
+.next-card{background:linear-gradient(135deg,rgba(61,220,132,.14),rgba(26,122,74,.07));border:1px solid rgba(61,220,132,.22);border-radius:22px;padding:20px 22px;margin:0 -5px;position:relative;overflow:hidden;}
 .next-card::before{content:'';position:absolute;top:-28px;right:-28px;width:100px;height:100px;background:radial-gradient(circle,rgba(61,220,132,.08),transparent 70%);border-radius:50%;}
 [data-theme="light"] .next-card{background:linear-gradient(135deg,rgba(26,122,74,.08),rgba(61,220,132,.04));border-color:rgba(26,122,74,.25);}
 .nc-row{display:flex;justify-content:space-between;align-items:flex-start;}
-.nc-lbl{font-size:10px;color:var(--t3);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
-.nc-name{font-size:21px;font-weight:900;color:var(--t1);}
-.nc-time{font-size:34px;font-weight:900;color:var(--green);letter-spacing:-1px;line-height:1;}
-.nc-rem{display:inline-flex;align-items:center;gap:5px;background:rgba(61,220,132,.1);border:1px solid rgba(61,220,132,.2);border-radius:99px;padding:4px 10px;font-size:10px;font-weight:800;color:var(--green);margin-top:7px;}
+.nc-lbl{font-size:11px;color:var(--t3);font-weight:800;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px;}
+.nc-name{font-size:25px;font-weight:900;color:var(--t1);}
+.nc-time{font-size:42px;font-weight:900;color:var(--green);letter-spacing:-1.5px;line-height:1;}
+.nc-rem{display:inline-flex;align-items:center;gap:6px;background:rgba(61,220,132,.1);border:1px solid rgba(61,220,132,.2);border-radius:99px;padding:6px 13px;font-size:11.5px;font-weight:800;color:var(--green);margin-top:10px;}
 .hijri{text-align:center;font-family:'Amiri',serif;font-size:13px;color:var(--t3);margin-top:9px;}
 
 /* Tab body wrapper */
@@ -1597,6 +1597,29 @@ function getUID(){
   return id;
 }
 
+// ── "Ben" (bu cihaz) üyesini güvenilir şekilde işaretle ──
+// Sunucudan grup verisi her geldiğinde (loadGroups/create/join/polling) üyelerin
+// isMe bayrağı sıfırlanıyordu, çünkü sunucu bu alanı döndürmüyor — sadece userId döndürüyor.
+// Bu yüzden "Namazı Kıldım" butonu ve istatistikler "Üye bilgisi bulunamadı" hatası veriyordu.
+// Bu fonksiyon her grup verisi güncellendiğinde userId ↔ getUID() eşleşmesine göre
+// isMe bayrağını yeniden hesaplar, böylece hangi noktadan veri gelirse gelsin doğru kalır.
+function stampIsMe(g){
+  if(!g||!Array.isArray(g.members))return;
+  const uid=getUID();
+  let found=false;
+  g.members.forEach(m=>{
+    if(m.userId){
+      m.isMe=(m.userId===uid);
+      if(m.isMe)found=true;
+    }
+  });
+  // userId bilgisi olmayan eski/yerel (QR ile katılım vb.) gruplarda, tek kişilik
+  // ya da işaretsiz kalan üyeyi cihaz sahibi olarak kabul et.
+  if(!found&&!g.members.some(m=>m.isMe)&&g.members.length===1){
+    g.members[0].isMe=true;
+  }
+}
+
 // Ortak fetch sarmalayıcısı
 async function apiFetch(path,opts={}){
   try{
@@ -1673,6 +1696,7 @@ async function loadGroups(retry){
         if(!m.done)m.done={};
         PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});
       });
+      stampIsMe(g);
     });
     S.groups=groups;S._groupsLoaded=true;cacheGroupsLocally();
     renderGroups&&renderGroups();
@@ -1695,6 +1719,7 @@ async function _serverCreateGroup(name,emoji){
     // Üyelerin done objesini başlat
     if(g.members)g.members.forEach(m=>{if(!m.done)m.done={};PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});});
     if(!g.chat)g.chat=[];
+    stampIsMe(g);
     S.groups.push(g);S.curGroup=g.id;renderGroups&&renderGroups();
   }
   return g;
@@ -1713,6 +1738,7 @@ async function _serverJoinGroup(inviteCode){
       if(!m.done)m.done={};
       PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});
     });
+    stampIsMe(res.group);
   }
   const exists=S.groups.find(x=>x.id===res.group.id);
   if(!exists)S.groups.push(res.group);else Object.assign(exists,res.group);
@@ -1747,7 +1773,11 @@ async function refreshChat(groupId){
       // Yeni mesaj geldiyse ses çal
       if(chat.length>prevLen){
         const newMsgs=chat.slice(prevLen);
-        if(newMsgs.some(m=>m.type==='msg'&&m.userId!==getUID()))playMsgSound(false);
+        const incoming=newMsgs.some(m=>(m.type==='msg'||m.type==='pray')&&!m.mine&&m.userId!==getUID());
+        if(incoming){
+          playMsgSound(false);
+          try{if(navigator.vibrate)navigator.vibrate([40,30,40]);}catch(e){}
+        }
       }
     }
   }
@@ -1960,6 +1990,7 @@ function getLocation(){
       S.city=nearCity(S.lat,S.lon);S.gpsLabel=null;
       const ni=document.getElementById('inp-name');if(ni&&ni.value.trim())S.name=ni.value.trim();
       save();goMain();
+      maybeAskNotifPerm();
       toast('Konum alındı ✓');
       reverseGeocode(S.lat,S.lon).then(label=>{
         if(label){S.gpsLabel=label;save();render();}
@@ -1992,6 +2023,22 @@ function doSetup(){
   if(!c&&!S.lat){toast('Lütfen şehir seçin veya konum izni verin.',false);return;}
   if(c){const cd=CITIES[c];S.lat=cd.lat;S.lon=cd.lon;S.city=c;S.gpsLabel=null;}
   S.name=n;save();goMain();
+  maybeAskNotifPerm();
+}
+// Kurulum sırasında (doğrudan kullanıcı dokunuşuyla) bildirim izni henüz sorulmadıysa iste.
+// Vakit bildirimleri bu izin olmadan asla gösterilemez.
+let _notifAskedThisLoad=false;
+function maybeAskNotifPerm(){
+  if(_notifAskedThisLoad)return;
+  try{
+    if('Notification' in window && Notification.permission==='default'){
+      _notifAskedThisLoad=true;
+      Notification.requestPermission().then(p=>{
+        if(typeof updateNotifUI==='function')updateNotifUI();
+        if(p==='granted'&&typeof schedPushNotifs==='function')schedPushNotifs();
+      });
+    }
+  }catch(e){}
 }
 
 // ═══════════════════════════════════════════
@@ -2407,6 +2454,7 @@ function renderGroups(){
 function openGroup(id){
   const g=S.groups.find(x=>x.id===id);if(!g)return;S.curGroup=id;
   if(!g.members)g.members=[];if(!g.chat)g.chat=[];
+  stampIsMe(g);
   const ac=avC(g.name);
   document.getElementById('gd-emo').style.cssText=`background:${ac.bg};color:${ac.cl};font-size:26px;`;
   document.getElementById('gd-emo').textContent=g.emoji||'🕌';
@@ -2423,6 +2471,7 @@ function openGroup(id){
 }
 function backToMain(){showPage('pg-main');stopGroupPolling();renderGroups();}
 function renderNamazTab(g){
+  stampIsMe(g);
   const cv=curVakit();
   const me=g.members.find(m=>m.isMe);
   const done=me&&me.done&&me.done[cv];
@@ -2446,9 +2495,21 @@ function renderNamazTab(g){
 }
 function handleGroupKil(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  stampIsMe(g);
   const cv=curVakit();
-  const me=g.members.find(m=>m.isMe);
-  if(!me){toast('Üye bilgisi bulunamadı.',false);return;}
+  let me=g.members.find(m=>m.isMe);
+  if(!me){
+    // Son çare: bu cihazın userId'sine sahip üyeyi bul, hâlâ yoksa
+    // kendini grubun üyesi olarak ekle (eski/bozuk grup verisi için).
+    const uid=getUID();
+    me=g.members.find(m=>m.userId===uid);
+    if(!me){
+      me={name:S.name||'Ben',userId:uid,done:{},kildiAt:'',isMe:true};
+      g.members.push(me);
+    }
+    me.isMe=true;
+    save();
+  }
   if(me.done&&me.done[cv]){toast('Bu vakti zaten kıldın! ✅');return;}
   if(!me.done)me.done={};
   me.done[cv]=true;me.kildiAt=nowTime()+' kıldı';
@@ -2764,6 +2825,7 @@ function _doReact(g,msg,emoji){
 function chatKey(e){if(e.key==='Enter')sendMsg();}
 function renderStats(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  stampIsMe(g);
   const cv=curVakit();
   const me=g.members.find(m=>m.isMe);
   // Bugün kılınan vakitler
@@ -2834,6 +2896,7 @@ function renderStats(){
 }
 function renderFullMem(){
   const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
+  stampIsMe(g);
   const el=document.getElementById('full-mem-list');if(!el)return;
   el.innerHTML='';
   const cv=curVakit();
@@ -3154,17 +3217,29 @@ function startGroupPolling(){
     if(!local)return;
     // Diğer üyelerin done durumunu güncelle
     let changed=false;
+    stampIsMe(fresh);
     fresh.members.forEach(fm=>{
-      const lm=local.members.find(m=>m.name===fm.name&&!m.isMe);
-      if(lm&&JSON.stringify(lm.done)!==JSON.stringify(fm.done)){
+      const lm=local.members.find(m=>fm.userId?m.userId===fm.userId:(m.name===fm.name&&!m.isMe));
+      if(lm&&!lm.isMe&&JSON.stringify(lm.done)!==JSON.stringify(fm.done)){
         lm.done=fm.done||{};lm.kildiAt=fm.kildiAt||'';changed=true;
       }
     });
+    // Üye listesi kendisi değişmişse (yeni üye eklendi/çıkarıldı vb.) tamamen senkronize et
+    if(fresh.members.length!==local.members.length){
+      local.members=fresh.members;stampIsMe(local);changed=true;
+    }
     // Yeni mesajları ekle
     if(fresh.chat&&fresh.chat.length>local.chat.length){
       const newMsgs=fresh.chat.slice(local.chat.length);
       newMsgs.forEach(m=>{local.chat.push(m);});
       changed=true;
+      // Başkasından gelen yeni mesaj/namaz bildirimi varsa ses + titreşim
+      const uid=getUID();
+      const incoming=newMsgs.some(m=>(m.type==='msg'||m.type==='pray')&&!m.mine&&m.userId!==uid);
+      if(incoming){
+        playMsgSound(false);
+        try{if(navigator.vibrate)navigator.vibrate([40,30,40]);}catch(e){}
+      }
       const chatEl=document.getElementById('gtab-gchat');
       if(chatEl&&chatEl.classList.contains('show'))renderChat();
     }
@@ -3544,18 +3619,38 @@ function loadCustomAudioFromStorage(){
 
 // ─── renderSetPage'e ses grid'i ekle ───────
 const _origRenderSetPage=typeof renderSetPage==='function'?renderSetPage:null;
+// ─── Bugün hangi vakitlerin bildirimi gönderildi — tekrar/kayıp bildirimi önlemek için ───
+function _alertedKey(){return 'cm6_alerted_'+tkey();}
+function _getAlerted(){try{return JSON.parse(localStorage.getItem(_alertedKey())||'{}');}catch(e){return{};}}
+function _markAlerted(k){try{const a=_getAlerted();a[k]=true;localStorage.setItem(_alertedKey(),JSON.stringify(a));}catch(e){}}
+function _fireScheduled(k,t){_markAlerted(k);triggerAlarm(k,t);}
 function schedAlarms(){
   schedIds.forEach(clearTimeout);schedIds=[];if(!S.cfg.alarm)return;
   const earlyMs=S.cfg.early*60000;
   const keys=[...PK];if(S.cfg.imsak)keys.unshift('imsak');
+  const alerted=_getAlerted();
   keys.forEach(k=>{
     if(k!=='imsak'&&S.alarms[k]===false)return;
+    if(alerted[k])return; // bugün için bu vakit zaten bildirildi
     const t=S.times[k];if(!t||t==='--:--')return;
     const[h,m]=t.split(':').map(Number);const td=new Date();td.setHours(h,m,0,0);
     const diff=td.getTime()-earlyMs-Date.now();
-    if(diff>0&&diff<86400000)schedIds.push(setTimeout(()=>triggerAlarm(k,t),diff));
+    if(diff>0&&diff<86400000){
+      schedIds.push(setTimeout(()=>_fireScheduled(k,t),diff));
+    }else if(diff<=0&&diff>-600000){
+      // Vakit girmiş ama uygulama arka plandayken zamanlayıcı çalışmadığı için
+      // bildirim kaçmış olabilir (son 10 dk içindeyse) — uygulama öne gelir gelmez hemen gönder.
+      _fireScheduled(k,t);
+    }
   });
 }
+// Sekme/uygulama tekrar öne geldiğinde ya da belirli aralıklarla planlamayı tazele.
+// Mobil tarayıcılar arka plandaki setTimeout'ları erteleyip/iptal edebildiği için
+// bu, kaçırılan vakit bildirimlerini yakalayan asıl güvenlik ağıdır.
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&typeof schedAlarms==='function')schedAlarms();
+});
+setInterval(()=>{if(document.visibilityState==='visible'&&typeof schedAlarms==='function')schedAlarms();},30000);
 // ═══════════════════════════════════════════
 // ALARM ZAMANLAMA
 // ═══════════════════════════════════════════
@@ -3736,7 +3831,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // Tema uygula
   applyTheme(S.cfg.theme||'dark');
   // Eğer şehir seçilmişse direkt ana sayfaya git (localStorage verisiyle)
-  if(S.city||S.lat){goMain();}
+  if(S.city||S.lat){goMain();maybeAskNotifPerm();}
   // 2) Sunucudan güncel veri çek (async — UI donmaz)
   syncBadge('⏳ Yükleniyor...',0);
   const d=await apiFetch('/api/user');
