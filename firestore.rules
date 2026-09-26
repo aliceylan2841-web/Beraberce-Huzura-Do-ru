@@ -1,0 +1,75 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════
+// Namaz Takip — Firestore Güvenlik Kuralları
+//
+// Kimlik modeli: Firebase Anonim Kimlik Doğrulama (signInAnonymously).
+// Her cihaz sessizce "oturum açar" ve request.auth.uid, index.html'deki
+// getUID() ile birebir aynı değerdir. Kurallar bu gerçek kimliğe göre
+// yazılmıştır — sahte bir userId ile başka birinin verisini değiştirmek
+// mümkün değildir.
+// ═══════════════════════════════════════════════════════
+
+function signedIn() {
+  return request.auth != null;
+}
+
+// Bir grubun üyesi mi? (üye alt-koleksiyonunda kendi uid'i ile bir doküman var mı)
+function isGroupMember(groupId) {
+  return exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Kullanıcı ayarları (isim, şehir, kişisel namaz durumu, sözler) ──
+    // Sadece sahibi okuyup yazabilir.
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ── Gruplar ──
+    match /groups/{groupId} {
+      // Grubu sadece üyeleri okuyabilir (isim/sohbet/vakitler dahil).
+      allow read: if signedIn() && isGroupMember(groupId);
+      // Yeni grup oluşturma: giriş yapmış herkes yapabilir (o an henüz üye
+      // değildir, üyelik kaydı hemen ardından ayrı bir yazımla oluşturulur).
+      allow create: if signedIn();
+      // Var olan bir grubu güncelleme (sohbet mesajı ekleme, gün sıfırlama,
+      // isim/emoji değişikliği): sadece mevcut üyeler.
+      allow update: if signedIn() && isGroupMember(groupId);
+      allow delete: if false; // gruplar sadece son üye ayrılınca (fonksiyon dışı) silinmez; şimdilik kapalı
+
+      // ── Grup üyeleri ──
+      match /members/{memberId} {
+        // Üye listesini sadece o grubun üyeleri görebilir.
+        allow read: if signedIn() && isGroupMember(groupId);
+        // Bir kullanıcı SADECE kendi üyelik dokümanını oluşturabilir/silebilir
+        // (gruba katılma / gruptan ayrılma).
+        allow create, delete: if signedIn() && request.auth.uid == memberId;
+        // Güncelleme: ya kendi durumunu (done/kıldıAt/isim) günceller,
+        // ya da (gün değişince) grubun herhangi bir üyesi, TÜM üyelerin
+        // günlük durumunu sıfırlamak zorunda kalabilir — bu yüzden mevcut
+        // bir grup üyesinin "done" alanını sıfırlamasına (yalnızca boş
+        // nesneye sıfırlama) izin veriyoruz.
+        allow update: if signedIn() && isGroupMember(groupId) &&
+          (request.auth.uid == memberId || request.resource.data.done == {});
+      }
+    }
+
+    // ── Davet kodları (grupId eşlemesi) ──
+    // Herkes okuyabilir (katılmak için kod çözülmeli), ama sadece bir kez
+    // oluşturulabilir — var olan bir kodu kimse değiştiremez/silemez.
+    match /inviteCodes/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    // ── Kullanıcının üyesi olduğu grupların indeksi ──
+    // Sadece sahibi kendi listesini okuyup güncelleyebilir.
+    match /userGroups/{uid}/groups/{groupId} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+  }
+}

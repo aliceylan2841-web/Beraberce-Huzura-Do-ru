@@ -15,6 +15,11 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<!-- Firebase (Render yerine: kalıcı veritabanı + barındırma + AI fonksiyonu) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <style>
 :root{
   --bg:#07130d;--bg2:#0e1f16;--card:#1a3326;--card2:#1f3d2e;
@@ -1583,26 +1588,43 @@ let S={name:'',city:'',lat:null,lon:null,times:{},done:{},
 let alarmLoop=null,vibrateLoop=null,schedIds=[],selEmoVal='🕌',orientFn=null,heading=0,qibla=0;
 
 // ═══════════════════════════════════════════
-// STORAGE — Sunucu Entegrasyonu
+// STORAGE — Firebase Entegrasyonu (Render yerine)
 // ═══════════════════════════════════════════
 const tkey=()=>{const d=new Date();return`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;};
 
-// ── Render.com URL — deploy sonrası buraya kendi URL'ini yaz ──
-const API=localStorage.getItem('cm6_api')||'https://beraberce-huzura-do-ru.onrender.com';
+// ── FIREBASE YAPILANDIRMASI ──────────────────────────
+// Firebase Console → Proje Ayarları (⚙️) → Genel → "Uygulamalarınız" → Web uygulaması
+// bölümünden kopyaladığınız yapılandırmayı AŞAĞIYA YAPIŞTIRIN.
+const firebaseConfig = {
+  apiKey:            "AIzaSyDKXYdoY2uD9yluCDk7_C1N9HJLAosgmcc",
+  authDomain:         "huzura-dogru-bd7b6.firebaseapp.com",
+  projectId:          "huzura-dogru-bd7b6",
+  storageBucket:      "huzura-dogru-bd7b6.firebasestorage.app",
+  messagingSenderId:  "15829886775",
+  appId:              "1:15829886775:web:d2bbf0358c44ea382c9cb2"
+};
+firebase.initializeApp(firebaseConfig);
+const fdb   = firebase.firestore();
+const fAuth = firebase.auth();
+const fFns  = firebase.functions();
 
-// Cihaza özel sabit kullanıcı ID
-function getUID(){
-  let id=localStorage.getItem('cm6_uid');
-  if(!id){id='u'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);localStorage.setItem('cm6_uid',id);}
-  return id;
-}
+// Cihaza özel sabit kullanıcı ID — artık Firebase Anonim Kimlik Doğrulama UID'si.
+// Kayıt/şifre yok, cihaz sessizce ve otomatik olarak "oturum açar", kalıcıdır.
+let _fbUid=null;
+const _fbReady=new Promise(resolve=>{
+  fAuth.onAuthStateChanged(user=>{
+    if(user){_fbUid=user.uid;resolve(user.uid);}
+    else fAuth.signInAnonymously().catch(e=>{
+      console.error('Firebase giriş hatası:',e);
+      toast('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.',false);
+    });
+  });
+});
+function getUID(){return _fbUid||'pending';}
 
 // ── "Ben" (bu cihaz) üyesini güvenilir şekilde işaretle ──
-// Sunucudan grup verisi her geldiğinde (loadGroups/create/join/polling) üyelerin
-// isMe bayrağı sıfırlanıyordu, çünkü sunucu bu alanı döndürmüyor — sadece userId döndürüyor.
-// Bu yüzden "Namazı Kıldım" butonu ve istatistikler "Üye bilgisi bulunamadı" hatası veriyordu.
-// Bu fonksiyon her grup verisi güncellendiğinde userId ↔ getUID() eşleşmesine göre
-// isMe bayrağını yeniden hesaplar, böylece hangi noktadan veri gelirse gelsin doğru kalır.
+// userId ↔ getUID() eşleşmesine göre isMe bayrağını her grup verisi
+// güncellendiğinde yeniden hesaplar.
 function stampIsMe(g){
   if(!g||!Array.isArray(g.members))return;
   const uid=getUID();
@@ -1613,23 +1635,9 @@ function stampIsMe(g){
       if(m.isMe)found=true;
     }
   });
-  // userId bilgisi olmayan eski/yerel (QR ile katılım vb.) gruplarda, tek kişilik
-  // ya da işaretsiz kalan üyeyi cihaz sahibi olarak kabul et.
   if(!found&&!g.members.some(m=>m.isMe)&&g.members.length===1){
     g.members[0].isMe=true;
   }
-}
-
-// Ortak fetch sarmalayıcısı
-async function apiFetch(path,opts={}){
-  try{
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),65000); // 65sn timeout (Render uyku sonrası)
-    const r=await fetch(API+path,{...opts,signal:ctrl.signal,headers:{'Content-Type':'application/json','x-user-id':getUID(),...(opts.headers||{})}});
-    clearTimeout(tid);
-    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||r.status);}
-    return await r.json();
-  }catch(e){console.warn('API:',e.message);return null;}
 }
 
 // Durum rozeti
@@ -1640,10 +1648,26 @@ function syncBadge(txt,dur=3000){
   clearTimeout(el._t);if(dur>0)el._t=setTimeout(()=>el.style.opacity='0',dur);
 }
 
+function _initDone(members){
+  members.forEach(m=>{if(!m.done)m.done={};PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});});
+}
+
+// Verilen grup id'sinin tam halini (üyeleriyle birlikte) Firestore'dan okur.
+async function _fetchGroupFull(groupId){
+  const gDoc=await fdb.collection('groups').doc(groupId).get();
+  if(!gDoc.exists)return null;
+  const g=gDoc.data();
+  const mSnap=await fdb.collection('groups').doc(groupId).collection('members').get();
+  const members=mSnap.docs.map(d=>({userId:d.id,name:d.data().name,done:d.data().done||{},kildiAt:d.data().kildiAt||''}));
+  _initDone(members);
+  const full={id:groupId,name:g.name,emoji:g.emoji,inviteCode:g.inviteCode,chat:g.chat||[],_dd:g.dayKey,members};
+  stampIsMe(full);
+  return full;
+}
+
 // ── Kullanıcı verisi ──────────────────────────────────
 
 async function load(){
-  // Sadece grupları yükle (kullanıcı verisi DOMContentLoaded'da yüklenir)
   await loadGroups();
 }
 
@@ -1664,17 +1688,23 @@ let _saveTimer=null;
 function save(){
   // Anında localStorage
   try{localStorage.setItem('cm6',JSON.stringify({name:S.name,city:S.city,lat:S.lat,lon:S.lon,gpsLabel:S.gpsLabel,alarms:S.alarms,cfg:S.cfg,sozler:S.sozler,done:S.done}));}catch(e){}
-  // 1.5sn debounce ile sunucu
+  // 1.5sn debounce ile Firestore'a yaz
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(async()=>{
-    const ok=await apiFetch('/api/user',{method:'POST',body:JSON.stringify({name:S.name,city:S.city,lat:S.lat,lon:S.lon,alarms:S.alarms,cfg:S.cfg,sozler:S.sozler,done:S.done})});
-    if(ok)syncBadge('☁️ Kaydedildi');
+    try{
+      await _fbReady;
+      await fdb.collection('users').doc(getUID()).set({
+        name:S.name||'',city:S.city||'',lat:S.lat??null,lon:S.lon??null,
+        alarms:S.alarms||{},cfg:S.cfg||{},sozler:S.sozler||[],done:S.done||{},
+        updated:Date.now(),
+      },{merge:true});
+      syncBadge('☁️ Kaydedildi');
+    }catch(e){console.warn('Kaydetme hatası:',e.message);}
   },1500);
 }
 
 // ── Grup işlemleri ────────────────────────────────────
 
-// Sunucudan gelen en son grup listesini cihaza da yaz (çevrimdışı/başarısız istek durumunda kaybolmasın diye)
 function cacheGroupsLocally(){
   try{localStorage.setItem('cm6_groups',JSON.stringify(S.groups||[]));}catch(e){}
 }
@@ -1685,119 +1715,186 @@ function loadCachedGroups(){
   }catch(e){}
 }
 
-async function loadGroups(retry){
-  const groups=await apiFetch('/api/groups');
-  if(groups){
-    // Her grubun üyelerinde done objesini başlat
-    groups.forEach(g=>{
-      if(!g.chat)g.chat=[];
-      if(!g.members)g.members=[];
-      g.members.forEach(m=>{
-        if(!m.done)m.done={};
-        PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});
-      });
-      stampIsMe(g);
-    });
+async function loadGroups(){
+  try{
+    await _fbReady;
+    const uid=getUID();
+    const idsSnap=await fdb.collection('userGroups').doc(uid).collection('groups').get();
+    const groups=(await Promise.all(idsSnap.docs.map(d=>_fetchGroupFull(d.id)))).filter(Boolean);
     S.groups=groups;S._groupsLoaded=true;cacheGroupsLocally();
     renderGroups&&renderGroups();
-  }else if(!retry){
-    // Sunucu muhtemelen uykuda (Render soğuk başlangıcı) — biraz bekleyip bir kez daha dene.
-    // Bu sırada mevcut/önbellekteki gruplar ekranda kalmaya devam eder, "kayboluyor" hissi oluşmaz.
-    setTimeout(()=>{loadGroups(true).catch(()=>{});},4000);
-  }else{
-    // İkinci deneme de başarısız oldu: en azından yüklendi bilgisini işaretle ki
-    // önbellekte grup yoksa "Henüz grup yok" yerine "bağlanılamadı" mesajı gösterebilelim.
+  }catch(e){
+    console.warn('Gruplar yüklenemedi:',e.message);
     if(!S.groups||!S.groups.length)S._groupsLoaded='offline';
     renderGroups&&renderGroups();
   }
 }
 
-// Sunucuda grup oluştur — createGroup() içinden çağrılır
+// Yeni grup oluştur — createGroup() içinden çağrılır
 async function _serverCreateGroup(name,emoji){
-  const g=await apiFetch('/api/groups',{method:'POST',body:JSON.stringify({name,emoji,userName:S.name||'Ben'})});
-  if(g){
-    // Üyelerin done objesini başlat
-    if(g.members)g.members.forEach(m=>{if(!m.done)m.done={};PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});});
-    if(!g.chat)g.chat=[];
-    stampIsMe(g);
+  try{
+    await _fbReady;
+    const uid=getUID();
+    const groupId=fdb.collection('groups').doc().id;
+    // Benzersiz 6 haneli davet kodu üret (çok küçük ihtimalle çakışırsa yeniden dener)
+    let code,codeRef;
+    for(let i=0;i<5;i++){
+      code=Math.random().toString(36).slice(2,8).toUpperCase();
+      codeRef=fdb.collection('inviteCodes').doc(code);
+      if(!(await codeRef.get()).exists)break;
+    }
+    const now=Date.now(),day=tkey();
+    const chat=[{type:'event',txt:`🕌 "${name}" grubu oluşturuldu!`,time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}];
+
+    await fdb.collection('groups').doc(groupId).set({name,emoji:emoji||'🕌',inviteCode:code,chat,dayKey:day,created:now});
+    await fdb.collection('groups').doc(groupId).collection('members').doc(uid).set({name:S.name||'Ben',done:{},kildiAt:'',joined:now});
+    await fdb.collection('userGroups').doc(uid).collection('groups').doc(groupId).set({joined:now});
+    await codeRef.set({groupId});
+
+    const g=await _fetchGroupFull(groupId);
     S.groups.push(g);S.curGroup=g.id;renderGroups&&renderGroups();
-  }
-  return g;
+    return g;
+  }catch(e){console.warn('Grup oluşturulamadı:',e.message);toast('Grup oluşturulamadı: '+e.message,false);return null;}
 }
 
-// Sunucuda gruba katıl — joinByCode() içinden çağrılır
+// Gruba katıl — joinByCode() içinden çağrılır
 async function _serverJoinGroup(inviteCode){
   syncBadge('🔍 Grup aranıyor...',0);
-  const res=await apiFetch('/api/groups/join',{method:'POST',body:JSON.stringify({inviteCode,userName:S.name||'Ben'})});
-  syncBadge('');
-  if(!res)return null;
-  // done objelerini başlat
-  if(res.group&&res.group.members){
-    if(!res.group.chat)res.group.chat=[];
-    res.group.members.forEach(m=>{
-      if(!m.done)m.done={};
-      PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});
-    });
-    stampIsMe(res.group);
+  try{
+    await _fbReady;
+    const uid=getUID();
+    const codeDoc=await fdb.collection('inviteCodes').doc(inviteCode.toUpperCase()).get();
+    syncBadge('');
+    if(!codeDoc.exists){toast('Grup bulunamadı. Kod yanlış olabilir.',false);return null;}
+    const groupId=codeDoc.data().groupId;
+    const memberRef=fdb.collection('groups').doc(groupId).collection('members').doc(uid);
+    const already=(await memberRef.get()).exists;
+    const now=Date.now();
+    if(!already){
+      await memberRef.set({name:S.name||'Ben',done:{},kildiAt:'',joined:now});
+      await fdb.collection('userGroups').doc(uid).collection('groups').doc(groupId).set({joined:now});
+      // Sohbete katılma bildirimi ekle (üyelik artık var, update izni geçerli)
+      const gRef=fdb.collection('groups').doc(groupId);
+      await fdb.runTransaction(async tx=>{
+        const gDoc=await tx.get(gRef);
+        const chat=(gDoc.data().chat||[]);
+        chat.push({type:'event',txt:`👤 ${S.name||'Ben'} gruba katıldı!`,time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})});
+        tx.update(gRef,{chat:chat.slice(-200)});
+      });
+    }
+    const g=await _fetchGroupFull(groupId);
+    const exists=S.groups.find(x=>x.id===g.id);
+    if(!exists)S.groups.push(g);else Object.assign(exists,g);
+    S.curGroup=g.id;
+    renderGroups&&renderGroups();
+    return {alreadyMember:already,group:g};
+  }catch(e){
+    syncBadge('');
+    console.warn('Gruba katılamadı:',e.message);
+    toast('Gruba katılamadı: '+e.message,false);
+    return null;
   }
-  const exists=S.groups.find(x=>x.id===res.group.id);
-  if(!exists)S.groups.push(res.group);else Object.assign(exists,res.group);
-  S.curGroup=res.group.id;
-  renderGroups&&renderGroups();
-  return res;
 }
 
 // Namaz durumu güncelle
+// ÖNEMLİ: Gün değiştiyse HERKESİN durumu, bizim yazımızdan ÖNCE sıfırlanır —
+// aksi halde kendi az önce işaretlediğimiz "kıldım" durumu da anında silinirdi.
 async function updateMemberDone(groupId,done,kildiAt=''){
   const g=S.groups.find(x=>x.id===groupId);
   if(g){const me=g.members.find(m=>m.userId===getUID());if(me){me.done=done;me.kildiAt=kildiAt;}}
-  await apiFetch(`/api/groups/${groupId}/done`,{method:'PATCH',body:JSON.stringify({done,kildiAt})});
+  try{
+    await _fbReady;
+    const gRef=fdb.collection('groups').doc(groupId);
+    const gDoc=await gRef.get();
+    if(gDoc.exists&&gDoc.data().dayKey!==tkey()){
+      const mSnap=await gRef.collection('members').get();
+      const batch=fdb.batch();
+      mSnap.docs.forEach(d=>batch.update(d.ref,{done:{},kildiAt:''}));
+      batch.update(gRef,{dayKey:tkey()});
+      await batch.commit();
+    }
+    await gRef.collection('members').doc(getUID()).update({done,kildiAt});
+  }catch(e){console.warn('Durum güncellenemedi:',e.message);}
+}
+
+// Namaz bildirimini (kim hangi vakti kıldı) sohbete gerçekten yazar —
+// önceden sadece yerel ekranda gösterilip hiç sunucuya gitmiyordu, bu yüzden
+// diğer üyeler bu bildirimi hiç görmüyordu.
+async function _sendPrayServer(groupId,vakit,msgTxt){
+  try{
+    await _fbReady;
+    const uid=getUID();
+    const entry={type:'pray',sender:S.name||'Ben',userId:uid,vakit,time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),msg:msgTxt};
+    const gRef=fdb.collection('groups').doc(groupId);
+    await fdb.runTransaction(async tx=>{
+      const gDoc=await tx.get(gRef);
+      const chat=(gDoc.data().chat||[]);
+      chat.push(entry);
+      tx.update(gRef,{chat:chat.slice(-200)});
+    });
+  }catch(e){console.warn('Namaz bildirimi gönderilemedi:',e.message);}
 }
 
 // Mesaj gönder
 async function _sendMsgServer(groupId,txt){
-  const res=await apiFetch(`/api/groups/${groupId}/chat`,{method:'POST',body:JSON.stringify({txt})});
-  return res?.msg||null;
+  try{
+    await _fbReady;
+    const uid=getUID();
+    const mDoc=await fdb.collection('groups').doc(groupId).collection('members').doc(uid).get();
+    const senderName=mDoc.exists?mDoc.data().name:(S.name||'Ben');
+    const msg={type:'msg',sender:senderName,userId:uid,txt:txt.trim(),time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),reactions:[]};
+    const gRef=fdb.collection('groups').doc(groupId);
+    await fdb.runTransaction(async tx=>{
+      const gDoc=await tx.get(gRef);
+      const chat=(gDoc.data().chat||[]);
+      chat.push(msg);
+      tx.update(gRef,{chat:chat.slice(-200)});
+    });
+    return msg;
+  }catch(e){console.warn('Mesaj gönderilemedi:',e.message);return null;}
 }
 
-// Sohbeti yenile (sunucudan)
-let _chatRefreshTimer=null;
+// Gerçek zamanlı dinleyiciler zaten anlık güncellediği için bu artık sadece
+// açık grup yokken/ilk açılışta manuel bir tazeleme yedeği.
 async function refreshChat(groupId){
-  const chat=await apiFetch(`/api/groups/${groupId}/chat`);
-  if(chat){
-    const g=S.groups.find(x=>x.id===groupId);
-    if(g){
-      const prevLen=g.chat.length;
-      g.chat=chat;
+  if(!groupId)return;
+  try{
+    await _fbReady;
+    const g=await _fetchGroupFull(groupId);
+    if(!g)return;
+    const local=S.groups.find(x=>x.id===groupId);
+    if(local){
+      const prevLen=local.chat.length;
+      local.chat=g.chat;local.members=g.members;
       renderChat&&renderChat();
-      // Yeni mesaj geldiyse ses çal
-      if(chat.length>prevLen){
-        const newMsgs=chat.slice(prevLen);
+      if(g.chat.length>prevLen){
+        const newMsgs=g.chat.slice(prevLen);
         const incoming=newMsgs.some(m=>(m.type==='msg'||m.type==='pray')&&!m.mine&&m.userId!==getUID());
-        if(incoming){
-          playMsgSound(false);
-          try{if(navigator.vibrate)navigator.vibrate([40,30,40]);}catch(e){}
-        }
+        if(incoming){playMsgSound(false);try{if(navigator.vibrate)navigator.vibrate([40,30,40]);}catch(e){}}
       }
     }
-  }
+  }catch(e){/* sessiz geç */}
 }
 
 // Gruptan ayrıl
 async function leaveGroup(groupId){
-  await apiFetch(`/api/groups/${groupId}/leave`,{method:'DELETE'});
+  try{
+    await _fbReady;
+    const uid=getUID();
+    await fdb.collection('groups').doc(groupId).collection('members').doc(uid).delete();
+    await fdb.collection('userGroups').doc(uid).collection('groups').doc(groupId).delete();
+  }catch(e){console.warn('Gruptan ayrılırken hata:',e.message);}
   S.groups=S.groups.filter(x=>x.id!==groupId);
   if(S.curGroup===groupId)S.curGroup=null;
   renderGroups&&renderGroups();
 }
 
-// ── Ayarlar: API URL ──────────────────────────────────
-function saveApiUrl(){
-  const url=(document.getElementById('api-url-inp')?.value||'').trim().replace(/\/$/,'');
-  if(!url.startsWith('http')){toast('Geçerli bir URL girin (https://...)',false);return;}
-  localStorage.setItem('cm6_api',url);location.reload();
-}
-function fillApiUrl(){const inp=document.getElementById('api-url-inp');if(inp)inp.value=API;}
+// ── Ayarlar: eski "Sunucu Bağlantısı" alanı artık Firebase kullanıyor ──
+// Firebase yapılandırması kod içine gömülü olduğu için kullanıcının bir
+// URL girmesine gerek yok; bu fonksiyonlar geriye dönük uyumluluk için
+// zararsız hale getirildi.
+function saveApiUrl(){toast('Bu sürüm Firebase kullanıyor, ayrıca bir sunucu adresi girmenize gerek yok.',true);}
+function fillApiUrl(){const inp=document.getElementById('api-url-inp');if(inp){inp.value=(firebaseConfig.projectId||'')+' (Firebase)';inp.disabled=true;}}
 
 // ═══════════════════════════════════════════
 // DİYANET / ALADHAN API — Gerçek Zamanlı Vakitler
@@ -2383,22 +2480,30 @@ function addSoz(){
 }
 function delSoz(i){S.sozler.splice(i,1);save();renderSozler();toast('Silindi.');}
 
-// Yapay zeka ile otomatik doldurma — kullanıcının kendi sunucusunda
-// (Render backend) bir /api/ai/dua-fill uç noktası + AI anahtarı varsa çalışır.
-// Böyle bir entegrasyon yoksa açıkça bilgilendirip elle doldurmaya izin verir.
+// Yapay zeka ile otomatik doldurma — Firebase Cloud Functions üzerindeki
+// "duaFill" fonksiyonunu çağırır (Gemini anahtarı orada, sunucu tarafında
+// gizli tutulur; tarayıcıya asla gönderilmez).
 async function aiFillSoz(){
   const title=document.getElementById('soz-title-inp').value.trim();
   if(!title){toast('Önce bir başlık yazın (ör. "Ayet-el Kürsi").',false);return;}
   const btn=document.getElementById('ai-fill-btn');
   btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Yapay zeka düşünüyor...';
-  const res=await apiFetch('/api/ai/dua-fill',{method:'POST',body:JSON.stringify({title})});
-  if(res&&res.arabic){
-    document.getElementById('soz-txt').value=res.arabic;
-    document.getElementById('soz-meaning-inp').value=res.meaning||'';
-    if(res.src)document.getElementById('soz-src').value=res.src;
-    toast('Yapay zeka doldurdu, kontrol edip kaydedebilirsin ✨');
-  }else{
-    toast('AI özelliği için sunucunuza AI entegrasyonu eklenmeli. Şimdilik elle doldurabilirsin.',false);
+  try{
+    await _fbReady;
+    const duaFill=fFns.httpsCallable('duaFill');
+    const res=await duaFill({title});
+    const data=res.data;
+    if(data&&data.arabic){
+      document.getElementById('soz-txt').value=data.arabic;
+      document.getElementById('soz-meaning-inp').value=data.meaning||'';
+      if(data.src)document.getElementById('soz-src').value=data.src;
+      toast('Yapay zeka doldurdu, kontrol edip kaydedebilirsin ✨');
+    }else{
+      toast(data?.error||'Bu başlık için güvenilir bir metin bulunamadı.',false);
+    }
+  }catch(e){
+    console.warn('AI doldurma hatası:',e.message);
+    toast('Yapay zeka şu an cevap veremedi. Elle doldurabilirsin.',false);
   }
   btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-wand-magic-sparkles"></i> Yapay Zeka ile Doldur';
 }
@@ -2513,25 +2618,20 @@ function handleGroupKil(){
   if(me.done&&me.done[cv]){toast('Bu vakti zaten kıldın! ✅');return;}
   if(!me.done)me.done={};
   me.done[cv]=true;me.kildiAt=nowTime()+' kıldı';
-  // Gruba zengin namaz bildirimi gönder
+  // Anlık göster (optimistic UI) — gerçek yazı _sendPrayServer ile sunucuya gidiyor,
+  // onSnapshot geri dönünce zaten gerçek veriyle üzerine yazılacak.
   if(!g.chat)g.chat=[];
-  g.chat.push({
-    type:'pray',
-    sender:S.name||me.name||'Ben',
-    vakit:PL[cv]||cv,
-    time:nowTime(),
-    msg:_prayMsg(PL[cv]||cv)
-  });
+  const prayTxt=_prayMsg(PL[cv]||cv);
+  g.chat.push({type:'pray',sender:S.name||me.name||'Ben',vakit:PL[cv]||cv,time:nowTime(),msg:prayTxt});
   S.done[cv]=true;
   save();confetti();showKilModal(cv);
   renderNamazTab(g);renderDots();renderList();renderGroups();
-  // Server güncellemesi
+  // Sunucu güncellemesi — hem "kıldım" durumu hem grup sohbetindeki bildirim
   updateMemberDone(S.curGroup,me.done,me.kildiAt).catch(()=>{});
+  _sendPrayServer(S.curGroup,PL[cv]||cv,prayTxt).catch(()=>{});
   // Chat açıksa yenile
   const chatEl=document.getElementById('gtab-gchat');
   if(chatEl&&chatEl.classList.contains('show'))renderChat();
-  // Diğer üyelerden otomatik tebrik
-  _autoReplyPray(g,cv);
 }
 
 const _prayMsgs={
@@ -2545,20 +2645,6 @@ function _prayMsg(vakit){
   const arr=_prayMsgs[vakit]||['🕌 Namazını kıldı. Allah kabul etsin!'];
   return arr[Math.floor(Math.random()*arr.length)];
 }
-function _autoReplyPray(g,cv){
-  const replies=['Allah kabul etsin 🤲','MaşAllah! 🕌','Barakallahufik! ✨','Hayırlı olsun 🌙','Âmin! Allah razı olsun 🙏','Tebrikler, Allah kabul etsin 💚','İnşallah hep böyle devam 🌅'];
-  const others=g.members.filter(m=>!m.isMe);
-  others.forEach((o,i)=>{
-    if(Math.random()<0.7){
-      setTimeout(()=>{
-        g.chat.push({type:'msg',sender:o.name,mine:false,txt:replies[Math.floor(Math.random()*replies.length)],time:nowTime(),reactions:[]});
-        save();
-        if(document.getElementById('gtab-gchat').classList.contains('show'))renderChat();
-      },1200+(i*800)+Math.random()*1000);
-    }
-  });
-}
-
 // ═══════════════════════════════════════════
 // GRUP İÇİ GÜNLÜK GÖREVLER — KAZA / EZBER / DUA
 // ═══════════════════════════════════════════
@@ -3203,37 +3289,27 @@ function addMember(){
 
 // ── Gerçek Zamanlı Grup Polling ────────────────────────
 let _grpPollInterval=null;
+// Firestore'un gerçek zamanlı dinleme (onSnapshot) özelliği sayesinde artık
+// 8 saniyede bir "yoklama" yapmıyoruz — biri "kıldım" dediği veya mesaj attığı
+// an, diğer üyelerin ekranı ANINDA güncelleniyor. İsim geriye dönük uyumluluk
+// için korundu ama içeriği tamamen değişti.
+let _groupUnsubs=[];
 function startGroupPolling(){
-  if(_grpPollInterval)clearInterval(_grpPollInterval);
-  _grpPollInterval=setInterval(async()=>{
-    if(!S.curGroup)return;
-    // Server'dan en güncel grup verisini çek
-    const groups=await apiFetch('/api/groups');
-    if(!groups)return;
-    // Mevcut curGroup'u güncelle
-    const fresh=groups.find(x=>x.id===S.curGroup);
-    if(!fresh)return;
-    const local=S.groups.find(x=>x.id===S.curGroup);
-    if(!local)return;
-    // Diğer üyelerin done durumunu güncelle
-    let changed=false;
-    stampIsMe(fresh);
-    fresh.members.forEach(fm=>{
-      const lm=local.members.find(m=>fm.userId?m.userId===fm.userId:(m.name===fm.name&&!m.isMe));
-      if(lm&&!lm.isMe&&JSON.stringify(lm.done)!==JSON.stringify(fm.done)){
-        lm.done=fm.done||{};lm.kildiAt=fm.kildiAt||'';changed=true;
-      }
-    });
-    // Üye listesi kendisi değişmişse (yeni üye eklendi/çıkarıldı vb.) tamamen senkronize et
-    if(fresh.members.length!==local.members.length){
-      local.members=fresh.members;stampIsMe(local);changed=true;
-    }
-    // Yeni mesajları ekle
-    if(fresh.chat&&fresh.chat.length>local.chat.length){
-      const newMsgs=fresh.chat.slice(local.chat.length);
-      newMsgs.forEach(m=>{local.chat.push(m);});
-      changed=true;
-      // Başkasından gelen yeni mesaj/namaz bildirimi varsa ses + titreşim
+  stopGroupPolling();
+  if(!S.curGroup)return;
+  const groupId=S.curGroup;
+  const local=S.groups.find(x=>x.id===groupId);
+  if(!local)return;
+
+  // 1) Grup dokümanını dinle (isim/emoji/sohbet değişiklikleri)
+  const unsubGroup=fdb.collection('groups').doc(groupId).onSnapshot(doc=>{
+    if(!doc.exists)return;
+    const g=doc.data();
+    const prevLen=local.chat.length;
+    local.chat=g.chat||[];
+    local.name=g.name;local.emoji=g.emoji;local._dd=g.dayKey;
+    if(local.chat.length>prevLen){
+      const newMsgs=local.chat.slice(prevLen);
       const uid=getUID();
       const incoming=newMsgs.some(m=>(m.type==='msg'||m.type==='pray')&&!m.mine&&m.userId!==uid);
       if(incoming){
@@ -3243,15 +3319,28 @@ function startGroupPolling(){
       const chatEl=document.getElementById('gtab-gchat');
       if(chatEl&&chatEl.classList.contains('show'))renderChat();
     }
-    if(changed){
-      save();
-      const namazEl=document.getElementById('gtab-gnamaz');
-      if(namazEl&&namazEl.classList.contains('show'))renderNamazTab(local);
-      renderGroups();
-    }
-  },8000); // 8 saniyede bir güncelle
+    save();renderGroups();
+  },err=>console.warn('Grup dinleme hatası:',err.message));
+
+  // 2) Üyeler alt-koleksiyonunu dinle (kim kıldı, kim değil — anlık)
+  const unsubMembers=fdb.collection('groups').doc(groupId).collection('members').onSnapshot(snap=>{
+    const members=snap.docs.map(d=>({userId:d.id,name:d.data().name,done:d.data().done||{},kildiAt:d.data().kildiAt||''}));
+    _initDone(members);
+    local.members=members;
+    stampIsMe(local);
+    save();
+    const namazEl=document.getElementById('gtab-gnamaz');
+    if(namazEl&&namazEl.classList.contains('show'))renderNamazTab(local);
+    if(document.getElementById('full-mem-list'))renderFullMem();
+    renderGroups();
+  },err=>console.warn('Üye dinleme hatası:',err.message));
+
+  _groupUnsubs=[unsubGroup,unsubMembers];
 }
-function stopGroupPolling(){if(_grpPollInterval){clearInterval(_grpPollInterval);_grpPollInterval=null;}}
+function stopGroupPolling(){
+  _groupUnsubs.forEach(u=>{try{u();}catch(e){}});
+  _groupUnsubs=[];
+}
 
 // ── Member edit / delete ─────────────────────────────
 function editMember(idx){
@@ -3834,10 +3923,17 @@ document.addEventListener('DOMContentLoaded',async()=>{
   if(S.city||S.lat){goMain();maybeAskNotifPerm();}
   // 2) Sunucudan güncel veri çek (async — UI donmaz)
   syncBadge('⏳ Yükleniyor...',0);
-  const d=await apiFetch('/api/user');
-  if(d){_applyUser(d);localStorage.setItem('cm6',JSON.stringify(d));syncBadge('✅ Senkronize');
-    if(S.city||S.lat)goMain();}
-  else{syncBadge('📴 Çevrimdışı');if(S.city||S.lat)goMain();}
+  try{
+    await _fbReady;
+    const uDoc=await fdb.collection('users').doc(getUID()).get();
+    const d=uDoc.exists?uDoc.data():null;
+    if(d){_applyUser(d);localStorage.setItem('cm6',JSON.stringify(d));syncBadge('✅ Senkronize');
+      if(S.city||S.lat)goMain();}
+    else{syncBadge('');if(S.city||S.lat)goMain();}
+  }catch(e){
+    console.warn('Kullanıcı verisi yüklenemedi:',e.message);
+    syncBadge('📴 Çevrimdışı');if(S.city||S.lat)goMain();
+  }
   // 3) Grupları sunucudan yükle (bağlanamazsa devam et)
   loadGroups().catch(()=>{});
   // Her dakika namaz vakti yenile
