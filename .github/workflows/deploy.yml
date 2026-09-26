@@ -23,24 +23,10 @@ jobs:
       # - name: Cloud Function bağımlılıklarını kur
       #   run: cd functions && npm install
 
-      - name: Firebase kimlik bilgisini hazırla
-        env:
-          SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: echo "$SA_KEY" > "$HOME/firebase-service-account.json"
-
-      - name: Kimlik dosyasını doğrula (teşhis)
-        run: |
-          echo "Dosya boyutu (byte):"
-          wc -c < "$HOME/firebase-service-account.json"
-          echo "Geçerli JSON mu ve gerekli alanlar var mı:"
-          node -e "
-            const fs=require('fs');
-            const d=JSON.parse(fs.readFileSync(process.env.HOME+'/firebase-service-account.json','utf8'));
-            console.log('type:', d.type);
-            console.log('project_id:', d.project_id);
-            console.log('client_email var mı:', !!d.client_email);
-            console.log('private_key var mı:', !!d.private_key);
-          "
+      - name: Google kimlik doğrulaması
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Yayınla (Hosting + Firestore kuralları)
         # NOT: Cloud Functions (AI dua-doldurma özelliği) şu an listede DEĞİL,
@@ -48,5 +34,3 @@ jobs:
         # bu satırı şuna çevirin:
         #   firebase deploy --only hosting,firestore:rules,functions --project ...
         run: firebase deploy --only hosting,firestore:rules --project "${{ secrets.FIREBASE_PROJECT_ID }}" --non-interactive
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /home/runner/firebase-service-account.json
