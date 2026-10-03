@@ -2483,23 +2483,44 @@ function delSoz(i){S.sozler.splice(i,1);save();renderSozler();toast('Silindi.');
 // Yapay zeka ile otomatik doldurma — Firebase Cloud Functions üzerindeki
 // "duaFill" fonksiyonunu çağırır (Gemini anahtarı orada, sunucu tarafında
 // gizli tutulur; tarayıcıya asla gönderilmez).
+// NOT: Bu anahtar tarayıcı kodunda açık durur (Blaze/Cloud Functions kullanılmıyor,
+// bilinçli bir tercih). Gemini'nin ücretsiz katmanı kredi kartı istemediği için
+// en kötü ihtimalle biri anahtarı bulup ücretsiz kotayı tüketir — herhangi bir
+// ücret riski yoktur.
+const GEMINI_API_KEY='AQ.Ab8RN6LlLwPwRLwd_uz4OzqNSXa_OvwGu0wdQPbZb-_a6ULfTw';
+const GEMINI_MODELS=['gemini-2.5-flash-lite','gemini-2.5-flash','gemini-3.5-flash-lite'];
+
 async function aiFillSoz(){
   const title=document.getElementById('soz-title-inp').value.trim();
   if(!title){toast('Önce bir başlık yazın (ör. "Ayet-el Kürsi").',false);return;}
   const btn=document.getElementById('ai-fill-btn');
   btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Yapay zeka düşünüyor...';
   try{
-    await _fbReady;
-    const duaFill=fFns.httpsCallable('duaFill');
-    const res=await duaFill({title});
-    const data=res.data;
-    if(data&&data.arabic){
-      document.getElementById('soz-txt').value=data.arabic;
-      document.getElementById('soz-meaning-inp').value=data.meaning||'';
-      if(data.src)document.getElementById('soz-src').value=data.src;
-      toast('Yapay zeka doldurdu, kontrol edip kaydedebilirsin ✨');
+    const prompt=`Sen İslami bir dua/sure/ayet veritabanı asistanısın. Kullanıcı şu başlığı verdi: "${title}".
+Bu bir Kur'an suresi, ayeti veya bilinen bir dua/hadis olabilir.
+SADECE aşağıdaki JSON formatında, başka hiçbir açıklama eklemeden cevap ver:
+{"arabic":"<doğru harekeli Arapça metin>","meaning":"<sade, doğru Türkçe anlamı/meali>","src":"<kaynak, örn. 'Kur'an-ı Kerim · Bakara 255' veya 'Hadis-i Şerif'>"}
+Eğer başlık tanınmıyorsa veya emin değilsen, {"error":"bulunamadı"} döndür. Metinleri uydurma, sadece kesin bildiğin, doğru ve yaygın kabul gören metinleri ver.`;
+    let data=null;
+    for(const model of GEMINI_MODELS){
+      try{
+        const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})
+        });
+        if(r.ok){data=await r.json();break;}
+      }catch(e){/* bir sonraki modeli dene */}
+    }
+    if(!data)throw new Error('Hiçbir model yanıt vermedi');
+    const raw=(data.candidates?.[0]?.content?.parts?.[0]?.text||'').replace(/^```json\s*|```\s*$/g,'').trim();
+    const parsed=JSON.parse(raw);
+    if(parsed.error||!parsed.arabic){
+      toast('Bu başlık için güvenilir bir metin bulunamadı.',false);
     }else{
-      toast(data?.error||'Bu başlık için güvenilir bir metin bulunamadı.',false);
+      document.getElementById('soz-txt').value=parsed.arabic;
+      document.getElementById('soz-meaning-inp').value=parsed.meaning||'';
+      if(parsed.src)document.getElementById('soz-src').value=parsed.src;
+      toast('Yapay zeka doldurdu, kontrol edip kaydedebilirsin ✨');
     }
   }catch(e){
     console.warn('AI doldurma hatası:',e.message);
