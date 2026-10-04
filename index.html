@@ -1616,7 +1616,7 @@ const _fbReady=new Promise(resolve=>{
     if(user){_fbUid=user.uid;resolve(user.uid);}
     else fAuth.signInAnonymously().catch(e=>{
       console.error('Firebase giriş hatası:',e);
-      toast('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.',false);
+      toast('Giriş hatası ['+(e.code||'?')+']: '+e.message,false);
     });
   });
 });
@@ -3067,7 +3067,9 @@ async function createGroup(){
   closeModal('cg-modal');
   toast('Grup oluşturuluyor...');
   const g=await _serverCreateGroup(name,selEmoVal);
-  if(!g){toast('Grup oluşturulamadı. Sunucuya bağlanılamıyor.',false);return;}
+  // NOT: _serverCreateGroup kendi hata mesajını (gerçek sebebiyle) zaten gösteriyor —
+  // burada genel bir mesajla onun üzerine yazmıyoruz, aksi halde asıl hata gizlenirdi.
+  if(!g)return;
   confetti();
   toast('"'+name+'" oluşturuldu! 🎉');
   setTimeout(()=>openGroup(g.id),300);
