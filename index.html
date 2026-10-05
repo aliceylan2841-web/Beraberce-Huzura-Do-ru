@@ -3,23 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Cemaatim v4</title>
+<title>Huzura Doğru – Namaz Vakitleri</title>
 <meta name="description" content="Namaz vakitleri, kıble, tesbih, Ramazan — her şey tek uygulamada">
 <meta name="theme-color" content="#07130d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Cemaatim">
+<meta name="apple-mobile-web-app-title" content="Huzura Doğru">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/npm/twemoji@latest/assets/72x72/1f54c.png">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-<!-- Firebase (Render yerine: kalıcı veritabanı + barındırma + AI fonksiyonu) -->
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-functions-compat.js"></script>
 <style>
 :root{
   --bg:#07130d;--bg2:#0e1f16;--card:#1a3326;--card2:#1f3d2e;
@@ -694,7 +687,7 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
 <div id="pg-setup" class="page show">
   <div class="logo-box">
     <div class="logo-ring"><i class="fa-solid fa-mosque"></i></div>
-    <h1>Cemaatim</h1>
+    <h1>Huzura Doğru</h1>
     <p>Namaz Vakitleri</p>
     <div class="acamay-badge"><i class="fa-solid fa-star"></i><span>ACAMAY</span></div>
   </div>
@@ -783,22 +776,6 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
       </div>
     </div>
 
-    <!-- GRUPLAR -->
-    <div id="tab-gruplar" class="tab">
-      <div class="tab-pad">
-        <div class="sect"><i class="fa-solid fa-users"></i> Namaz Gruplarım</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button class="add-grp-btn" style="margin-bottom:0;flex:1" onclick="openCreateGroup()">
-            <i class="fa-solid fa-plus-circle" style="color:var(--green2)"></i> Yeni Grup Oluştur
-          </button>
-          <button class="add-grp-btn" style="margin-bottom:0;flex:1;border-color:rgba(232,197,71,.35);color:var(--gold)" onclick="openJoinGroup()">
-            <i class="fa-solid fa-right-to-bracket"></i> Gruba Katıl
-          </button>
-        </div>
-        <div id="grp-list"></div>
-      </div>
-    </div>
-
     <!-- KİBLE -->
     <div id="tab-kible" class="tab">
       <div class="tab-pad" style="padding-bottom:90px">
@@ -858,11 +835,10 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
       <div class="modal-box">
         <div class="m-handle"></div>
         <h3><i class="fa-solid fa-book-quran"></i> Yeni Dua / Sure Ekle</h3>
-        <button class="ai-fill-btn" id="ai-fill-btn" onclick="aiFillSoz()"><i class="fa-solid fa-wand-magic-sparkles"></i> Yapay Zeka ile Doldur</button>
         <div class="fl">Başlık</div>
         <input type="text" class="inp" id="soz-title-inp" placeholder="ör. Ayet-el Kürsi" style="margin-top:5px">
         <div class="fl" style="margin-top:2px">Arapça Metin</div>
-        <textarea id="soz-txt" placeholder="Arapça metni yazın veya yapay zeka ile doldurun..." style="height:80px;margin-top:5px"></textarea>
+        <textarea id="soz-txt" placeholder="Arapça metni yazın..." style="height:80px;margin-top:5px"></textarea>
         <div class="fl" style="margin-top:2px">Türkçe Anlamı</div>
         <textarea id="soz-meaning-inp" placeholder="Türkçe anlamı..." style="height:64px;margin-top:5px"></textarea>
         <div class="fl" style="margin-top:2px">Kaynak (opsiyonel)</div>
@@ -930,17 +906,6 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
           <div class="sr"><div class="sr-ico" style="background:rgba(232,197,71,.1);color:var(--gold)"><i class="fa-solid fa-calculator"></i></div><div class="sr-info"><div class="t">Hesaplama Metodu</div><div class="s">Namaz vakti algoritması</div></div><select class="ssel" id="sel-method" onchange="saveSel('method',this.value)"><option value="diyanet" selected>Diyanet</option><option value="mwl">MWL</option><option value="isna">ISNA</option></select></div>
         </div>
 
-        <div class="ss-tit">☁️ Sunucu Bağlantısı</div>
-        <div class="scard">
-          <div class="sr" style="flex-direction:column;align-items:flex-start;gap:8px;padding:13px 14px;">
-            <div style="display:flex;align-items:center;gap:10px;width:100%">
-              <div class="sr-ico" style="background:rgba(61,220,132,.1);color:var(--green);flex-shrink:0"><i class="fa-solid fa-server"></i></div>
-              <div class="sr-info"><div class="t">Render.com Sunucu URL</div><div class="s">Deploy sonrası onrender.com adresinizi girin</div></div>
-            </div>
-            <input type="url" class="inp" id="api-url-inp" placeholder="https://namaz-takip-api.onrender.com" style="margin-bottom:0;font-size:12px;">
-            <button class="btn-green full" onclick="saveApiUrl()" style="margin-top:0"><i class="fa-solid fa-plug"></i> Bağlan & Yenile</button>
-          </div>
-        </div>
         <!-- Hata Kayıt -->
         <div class="ss-tit">🛠 Hata Kayıtları</div>
         <div class="scard">
@@ -1209,119 +1174,12 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
   <!-- Bottom nav -->
   <nav class="bot-nav">
     <button class="nb act" id="nb-vakit" onclick="showTab('vakit',this)"><i class="fa-solid fa-clock"></i><span>Vakitler</span></button>
-    <button class="nb" id="nb-gruplar" onclick="showTab('gruplar',this)"><i class="fa-solid fa-users"></i><span>Gruplar</span></button>
     <button class="nb" id="nb-sozler" onclick="showTab('sozler',this)"><i class="fa-solid fa-book-quran"></i><span>Dua</span></button>
     <button class="nb" id="nb-tesbih" onclick="showTab('tesbih',this)"><i class="fa-solid fa-circle-dot"></i><span>Tesbih</span></button>
     <button class="nb" id="nb-ramazan" onclick="showTab('ramazan',this)"><i class="fa-solid fa-moon"></i><span>Ramazan</span></button>
     <button class="nb" id="nb-kible" onclick="showTab('kible',this)"><i class="fa-solid fa-compass"></i><span>Kıble</span></button>
     <button class="nb" id="nb-ayarlar" onclick="showTab('ayarlar',this)"><i class="fa-solid fa-gear"></i><span>Ayarlar</span></button>
   </nav>
-</div>
-
-<!-- GROUP DETAIL PAGE -->
-<div id="pg-group" class="page">
-  <div class="gd-hdr">
-    <button class="back-btn" onclick="backToMain()"><i class="fa-solid fa-arrow-left"></i></button>
-    <div class="gd-info-row">
-      <div class="gd-emo" id="gd-emo"></div>
-      <div><div class="gd-title" id="gd-title">Grup</div><div class="gd-sub" id="gd-sub">0 üye</div></div>
-    </div>
-    <div class="gd-acts">
-      <button class="ghost-btn" onclick="copyInvite()"><i class="fa-solid fa-link"></i> Davet</button>
-      <button class="ghost-btn" onclick="openAddMember()"><i class="fa-solid fa-user-plus"></i> Üye Ekle</button>
-      <button class="ghost-btn" onclick="openEditGroup()" style="color:var(--gold);border-color:rgba(232,197,71,.25)"><i class="fa-solid fa-pen"></i></button>
-      <button class="ghost-btn" onclick="confirmDeleteGroup()" style="color:var(--red);border-color:rgba(255,92,92,.25);flex:none;width:38px;padding:9px 0"><i class="fa-solid fa-trash"></i></button>
-    </div>
-  </div>
-  <div class="gtabs">
-    <button class="gtab act" onclick="showGTab('gnamaz',this)"><i class="fa-solid fa-person-praying"></i> Namaz</button>
-    <button class="gtab" onclick="showGTab('gchat',this)"><i class="fa-solid fa-comments"></i> Sohbet</button>
-    <button class="gtab" onclick="showGTab('gorevler',this)"><i class="fa-solid fa-list-check"></i> Görevler</button>
-    <button class="gtab" onclick="showGTab('gstats',this)"><i class="fa-solid fa-chart-bar"></i> İstatistik</button>
-    <button class="gtab" onclick="showGTab('guyeler',this)"><i class="fa-solid fa-users"></i> Üyeler</button>
-  </div>
-  <div class="gtab-wrap">
-    <div id="gtab-gnamaz" class="gtab-body show">
-      <div class="fam-dua-card" id="fam-dua-card">
-        <div class="fam-dua-lbl">👨‍👩‍👧‍👦 Ailece Bugünün Duası</div>
-        <div class="fam-dua-txt" id="fam-dua-txt">—</div>
-        <button class="fam-dua-btn" id="fam-dua-btn" onclick="toggleFamilyDua()">
-          <i class="fa-solid fa-hand-holding-heart"></i> <span id="fam-dua-btn-txt">Bugün ailemiz için dua ettik</span>
-        </button>
-        <div class="fam-dua-done" id="fam-dua-done-lbl" style="display:none"></div>
-      </div>
-      <button class="big-kil-btn" id="big-kil-btn" onclick="handleGroupKil()">
-        <i class="fa-solid fa-check-double"></i><span id="big-kil-txt">NAMAZI KILDIM</span>
-      </button>
-      <div class="sect"><i class="fa-solid fa-circle-nodes"></i> Grup Durumu <span style="margin-left:auto;font-size:10px;color:var(--t3);font-weight:700" id="grp-cnt"></span></div>
-      <div id="mem-status-list"></div>
-    </div>
-    <div id="gtab-gchat" class="gtab-body" style="padding:0;">
-      <div class="chat-outer">
-        <div class="chat-msgs" id="chat-msgs"></div>
-        <!-- Hızlı emoji tepki satırı -->
-        <div class="quick-emojis" id="quick-emojis">
-          <button onclick="quickEmoji('🤲')">🤲</button>
-          <button onclick="quickEmoji('🕌')">🕌</button>
-          <button onclick="quickEmoji('✅')">✅</button>
-          <button onclick="quickEmoji('😊')">😊</button>
-          <button onclick="quickEmoji('👍')">👍</button>
-          <button onclick="quickEmoji('🌙')">🌙</button>
-          <button onclick="quickEmoji('🙏')">🙏</button>
-          <button onclick="quickEmoji('💚')">💚</button>
-        </div>
-        <div class="chat-inp-area">
-          <button class="emoji-toggle-btn" onclick="toggleQuickEmoji()" title="Emoji"><i class="fa-solid fa-face-smile"></i></button>
-          <input type="text" class="chat-inp" id="chat-inp" placeholder="Mesaj yaz..." maxlength="300" onkeydown="chatKey(event)">
-          <button class="send-btn" onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
-      </div>
-    </div>
-    <div id="gtab-gorevler" class="gtab-body">
-      <div class="sect"><i class="fa-solid fa-mosque"></i> Kaza Namazı Takibi</div>
-      <div class="task-card" id="kaza-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <div>
-            <div style="font-size:12px;color:var(--t3);font-weight:700">Bugün kılınan kaza</div>
-            <div style="font-size:28px;font-weight:900;color:var(--green)" id="kaza-today">0</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:12px;color:var(--t3);font-weight:700">Toplam</div>
-            <div style="font-size:18px;font-weight:900;color:var(--t1)" id="kaza-total">0</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn-outline" style="flex:1" onclick="kazaChange(-1)"><i class="fa-solid fa-minus"></i></button>
-          <button class="btn-green full" style="flex:2" onclick="kazaChange(1)"><i class="fa-solid fa-plus"></i> Kaza Namazı Kıldım</button>
-        </div>
-      </div>
-
-      <div class="sect" style="margin-top:18px"><i class="fa-solid fa-book-quran"></i> Ezber Takibi <span style="margin-left:auto;font-size:10px;color:var(--t3);font-weight:700" id="ezber-cnt"></span></div>
-      <div class="prog-bar" style="margin-bottom:10px"><div class="prog-fill" id="ezber-bar" style="width:0%"></div></div>
-      <div id="ezber-list"></div>
-      <div style="display:flex;gap:7px;margin-top:8px">
-        <input type="text" class="inp" id="ezber-inp" placeholder="Yeni sure/ayet ekle..." maxlength="40" style="margin-bottom:0">
-        <button class="ico-btn gld" onclick="addEzber()"><i class="fa-solid fa-plus"></i></button>
-      </div>
-
-      <div class="sect" style="margin-top:18px"><i class="fa-solid fa-hands-praying"></i> Günlük Dua Takibi <span style="margin-left:auto;font-size:10px;color:var(--t3);font-weight:700" id="dua-cnt"></span></div>
-      <div class="prog-bar" style="margin-bottom:10px"><div class="prog-fill" id="dua-bar" style="width:0%"></div></div>
-      <div id="dua-list"></div>
-    </div>
-    <div id="gtab-gstats" class="gtab-body">
-      <div class="stat-grid" id="stat-grid"></div>
-      <div class="week-card">
-        <h4>Bu Hafta (Kılınan Vakit)</h4>
-        <div class="bars-wrap" id="bars-wrap"></div>
-        <div class="bars-wrap" id="bars-days" style="height:auto;margin-top:4px;"></div>
-      </div>
-    </div>
-    <div id="gtab-guyeler" class="gtab-body">
-      <div class="sect"><i class="fa-solid fa-users"></i> Tüm Üyeler</div>
-      <div id="full-mem-list"></div>
-      <button class="add-mem-btn" onclick="openAddMember()"><i class="fa-solid fa-user-plus"></i> Üye Davet Et</button>
-    </div>
-  </div>
 </div>
 
 <!-- DUA & SURE OKUMA SAYFASI -->
@@ -1426,124 +1284,6 @@ html,body{height:100%;background:#000;font-family:'Cairo',sans-serif;overflow:hi
   </div>
 </div>
 
-<!-- CREATE GROUP MODAL -->
-<div class="modal-ov" id="cg-modal">
-  <div class="modal-box">
-    <div class="m-handle"></div>
-    <h3>Yeni Grup Oluştur</h3>
-    <div class="fl">Grup Adı</div>
-    <input type="text" class="inp" id="cg-name" placeholder="Örn: Aile, Arkadaşlar..." maxlength="30" style="margin-top:5px">
-    <div class="fl" style="margin-top:2px">Emoji</div>
-    <div class="emoji-row" id="emoji-row">
-      <button class="emoji-opt sel" onclick="selEmo(this,'🕌')">🕌</button>
-      <button class="emoji-opt" onclick="selEmo(this,'👨‍👩‍👧‍👦')">👨‍👩‍👧‍👦</button>
-      <button class="emoji-opt" onclick="selEmo(this,'🤲')">🤲</button>
-      <button class="emoji-opt" onclick="selEmo(this,'🌙')">🌙</button>
-      <button class="emoji-opt" onclick="selEmo(this,'⭐')">⭐</button>
-      <button class="emoji-opt" onclick="selEmo(this,'📿')">📿</button>
-      <button class="emoji-opt" onclick="selEmo(this,'🌿')">🌿</button>
-      <button class="emoji-opt" onclick="selEmo(this,'💚')">💚</button>
-      <button class="emoji-opt" onclick="selEmo(this,'🏠')">🏠</button>
-      <button class="emoji-opt" onclick="selEmo(this,'🎓')">🎓</button>
-    </div>
-    <button class="btn-green full" onclick="createGroup()"><i class="fa-solid fa-check"></i> Grubu Oluştur</button>
-    <button class="btn-outline" onclick="closeModal('cg-modal')">İptal</button>
-  </div>
-</div>
-
-<!-- DAVET & KATIL MODAL -->
-<div class="modal-ov" id="addmem-modal">
-  <div class="modal-box" style="max-height:88vh;overflow-y:auto;">
-    <div class="m-handle"></div>
-
-    <!-- Sekmeler -->
-    <div class="inv-tabs">
-      <button class="inv-tab act" id="itab-send" onclick="switchInvTab('send',this)">
-        <i class="fa-solid fa-share-nodes"></i> Davet Gönder
-      </button>
-      <button class="inv-tab" id="itab-join" onclick="switchInvTab('join',this)">
-        <i class="fa-solid fa-right-to-bracket"></i> Gruba Katıl
-      </button>
-    </div>
-
-    <!-- DAVET GÖNDER -->
-    <div id="inv-panel-send">
-      <div class="inv-grp-info" id="inv-grp-info"></div>
-
-      <!-- QR Kod -->
-      <div class="inv-section">
-        <div class="inv-sec-lbl"><i class="fa-solid fa-qrcode"></i> QR Kod ile Davet</div>
-        <div class="inv-sec-sub">Arkadaşın bu kodu uygulamada okutarak gruba katılır</div>
-        <div class="qr-box">
-          <div id="qr-canvas"></div>
-        </div>
-        <button class="inv-action-btn" onclick="downloadQR()">
-          <i class="fa-solid fa-download"></i> QR Kodu İndir
-        </button>
-      </div>
-
-      <!-- Kod ile -->
-      <div class="inv-section">
-        <div class="inv-sec-lbl"><i class="fa-solid fa-key"></i> Davet Kodu ile Paylaş</div>
-        <div class="inv-sec-sub">Bu 6 haneli kodu arkadaşına gönder</div>
-        <div class="inv-code-box">
-          <div class="inv-code" id="inv-code-display">——</div>
-          <button class="inv-copy-btn" onclick="copyInviteCode()">
-            <i class="fa-solid fa-copy"></i> Kopyala
-          </button>
-        </div>
-        <button class="inv-action-btn" onclick="shareInvite()" style="background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.35);color:#25d366;font-weight:900;">
-          <i class="fa-brands fa-whatsapp" style="font-size:16px"></i> WhatsApp ile Paylaş
-        </button>
-      </div>
-
-      <!-- Manuel üye ekle -->
-      <div class="inv-section">
-        <div class="inv-sec-lbl"><i class="fa-solid fa-user-plus"></i> İsimle Ekle</div>
-        <div class="inv-sec-sub">Aynı cihazda kullanacak kişiyi direkt ekle</div>
-        <input type="text" class="inp" id="addmem-inp" placeholder="Üye adı..." maxlength="24" style="margin-bottom:8px">
-        <button class="btn-green full" onclick="addMember()">
-          <i class="fa-solid fa-user-plus"></i> Ekle
-        </button>
-      </div>
-    </div>
-
-    <!-- GRUBA KATIL -->
-    <div id="inv-panel-join" style="display:none">
-      <!-- Kod ile katıl -->
-      <div class="inv-section">
-        <div class="inv-sec-lbl"><i class="fa-solid fa-key"></i> Davet Kodu Gir</div>
-        <div class="inv-sec-sub">Sana gönderilen 6 haneli kodu buraya yaz</div>
-        <input type="text" class="inp inv-code-inp" id="join-code-inp"
-          placeholder="Örn: A3F9X2" maxlength="6"
-          oninput="this.value=this.value.toUpperCase()"
-          style="text-align:center;font-size:22px;font-weight:900;letter-spacing:6px;margin-bottom:8px">
-        <button class="btn-green full" onclick="joinByCode()">
-          <i class="fa-solid fa-right-to-bracket"></i> Gruba Katıl
-        </button>
-      </div>
-
-      <!-- QR Tara -->
-      <div class="inv-section">
-        <div class="inv-sec-lbl"><i class="fa-solid fa-camera"></i> QR Kod Tara</div>
-        <div class="inv-sec-sub">Kameranı aç ve QR kodu tara</div>
-        <div id="qr-reader-wrap" style="display:none">
-          <video id="qr-video" autoplay playsinline muted style="width:100%;border-radius:12px;background:#000;max-height:220px;object-fit:cover"></video>
-          <div id="qr-scan-lbl" style="text-align:center;font-size:11px;color:var(--t3);margin-top:6px">Kamerayı QR koda doğrult...</div>
-          <button class="btn-outline" style="margin-top:8px" onclick="stopQRScan()">
-            <i class="fa-solid fa-stop"></i> İptal
-          </button>
-        </div>
-        <button class="inv-action-btn" id="qr-scan-btn" onclick="startQRScan()">
-          <i class="fa-solid fa-camera"></i> Kamerayı Aç
-        </button>
-      </div>
-    </div>
-
-    <button class="btn-outline" onclick="closeModal('addmem-modal')" style="margin-top:4px">Kapat</button>
-  </div>
-</div>
-
 <div class="toast" id="toast"><i class="fa-solid fa-circle-check" id="t-ico"></i><span id="t-msg"></span></div>
 <script>
 // ═══════════════════════════════════════════
@@ -1584,119 +1324,15 @@ const MOT={
 let S={name:'',city:'',lat:null,lon:null,times:{},done:{},
   alarms:{sabah:true,ogle:true,ikindi:true,aksam:true,yatsi:true},
   cfg:{alarm:true,imsak:true,early:10,sound:'hicaz',method:'diyanet',theme:'dark',vibrate:true},
-  groups:[],sozler:[],curGroup:null};
-let alarmLoop=null,vibrateLoop=null,schedIds=[],selEmoVal='🕌',orientFn=null,heading=0,qibla=0;
+  sozler:[]};
+let alarmLoop=null,vibrateLoop=null,schedIds=[],orientFn=null,heading=0,qibla=0;
 
 // ═══════════════════════════════════════════
-// STORAGE — Firebase Entegrasyonu (Render yerine)
+// STORAGE — yalnızca cihazda (localStorage). Sunucu/hesap gerekmez.
 // ═══════════════════════════════════════════
 const tkey=()=>{const d=new Date();return`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;};
 
-// ── FIREBASE YAPILANDIRMASI ──────────────────────────
-// Firebase Console → Proje Ayarları (⚙️) → Genel → "Uygulamalarınız" → Web uygulaması
-// bölümünden kopyaladığınız yapılandırmayı AŞAĞIYA YAPIŞTIRIN.
-const firebaseConfig = {
-  apiKey:            "AIzaSyDKXYdoY2uD9yluCDk7_C1N9HJLAosgmcc",
-  authDomain:         "huzura-dogru-bd7b6.firebaseapp.com",
-  projectId:          "huzura-dogru-bd7b6",
-  storageBucket:      "huzura-dogru-bd7b6.firebasestorage.app",
-  messagingSenderId:  "15829886775",
-  appId:              "1:15829886775:web:d2bbf0358c44ea382c9cb2"
-};
-firebase.initializeApp(firebaseConfig);
-const fdb   = firebase.firestore();
-const fAuth = firebase.auth();
-const fFns  = firebase.functions();
-
-// Cihaza özel sabit kullanıcı ID — artık Firebase Anonim Kimlik Doğrulama UID'si.
-// Kayıt/şifre yok, cihaz sessizce ve otomatik olarak "oturum açar", kalıcıdır.
-let _fbUid=null;
-let _fbError=null;
-let _fbReadyResolve,_fbReadyReject;
-const _fbReady=new Promise((resolve,reject)=>{_fbReadyResolve=resolve;_fbReadyReject=reject;});
-let _fbAuthStarted=false;
-
-function _fbFail(e){
-  if(_fbError)return;
-  _fbError=e||new Error('Firebase bağlantısı kurulamadı');
-  console.error('Firebase bağlantı hatası:',_fbError);
-  _fbReadyReject(_fbError);
-  syncBadge('⚠️ Sunucu bağlantısı yok',0);
-  const code=_fbError.code||'?';
-  const msg=code==='auth/operation-not-allowed'
-    ? 'Firebase Anonymous giriş kapalı. Firebase Console → Authentication → Sign-in method → Anonymous seçeneğini açın.'
-    : 'Sunucu bağlantısı kurulamadı ['+code+']. Uygulama çevrimdışı çalışmaya devam ediyor.';
-  setTimeout(()=>{try{toast(msg,false);}catch(_){}} ,300);
-}
-
-try{
-  fAuth.onAuthStateChanged(user=>{
-    if(user){
-      _fbUid=user.uid;
-      if(!_fbAuthStarted){_fbAuthStarted=true;_fbReadyResolve(user.uid);}
-      syncBadge('☁️ Sunucu bağlı');
-    }else if(!_fbAuthStarted){
-      _fbAuthStarted=true;
-      fAuth.signInAnonymously().catch(_fbFail);
-    }
-  },_fbFail);
-}catch(e){_fbFail(e);}
-
-// Auth hiç cevap vermezse uygulamanın açılmasını sonsuza kadar bekletme.
-setTimeout(()=>{
-  if(!_fbUid&&!_fbError)_fbFail(new Error('Firebase kimlik doğrulama zaman aşımına uğradı'));
-},10000);
-
-function getUID(){return _fbUid||'pending';}
-
-// ── "Ben" (bu cihaz) üyesini güvenilir şekilde işaretle ──
-// userId ↔ getUID() eşleşmesine göre isMe bayrağını her grup verisi
-// güncellendiğinde yeniden hesaplar.
-function stampIsMe(g){
-  if(!g||!Array.isArray(g.members))return;
-  const uid=getUID();
-  let found=false;
-  g.members.forEach(m=>{
-    if(m.userId){
-      m.isMe=(m.userId===uid);
-      if(m.isMe)found=true;
-    }
-  });
-  if(!found&&!g.members.some(m=>m.isMe)&&g.members.length===1){
-    g.members[0].isMe=true;
-  }
-}
-
-// Durum rozeti
-function syncBadge(txt,dur=3000){
-  let el=document.getElementById('sync-badge');
-  if(!el){el=document.createElement('div');el.id='sync-badge';el.style.cssText='position:fixed;top:10px;right:12px;z-index:9999;font-size:10px;font-weight:700;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);color:#fff;padding:3px 9px;border-radius:20px;transition:opacity .4s;font-family:Cairo,sans-serif;pointer-events:none;';document.body.appendChild(el);}
-  el.textContent=txt;el.style.opacity='1';
-  clearTimeout(el._t);if(dur>0)el._t=setTimeout(()=>el.style.opacity='0',dur);
-}
-
-function _initDone(members){
-  members.forEach(m=>{if(!m.done)m.done={};PK.forEach(k=>{if(m.done[k]===undefined)m.done[k]=false;});});
-}
-
-// Verilen grup id'sinin tam halini (üyeleriyle birlikte) Firestore'dan okur.
-async function _fetchGroupFull(groupId){
-  const gDoc=await fdb.collection('groups').doc(groupId).get();
-  if(!gDoc.exists)return null;
-  const g=gDoc.data();
-  const mSnap=await fdb.collection('groups').doc(groupId).collection('members').get();
-  const members=mSnap.docs.map(d=>({userId:d.id,name:d.data().name,done:d.data().done||{},kildiAt:d.data().kildiAt||''}));
-  _initDone(members);
-  const full={id:groupId,name:g.name,emoji:g.emoji,inviteCode:g.inviteCode,chat:g.chat||[],_dd:g.dayKey,members};
-  stampIsMe(full);
-  return full;
-}
-
-// ── Kullanıcı verisi ──────────────────────────────────
-
-async function load(){
-  await loadGroups();
-}
+function escHtml(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function _applyUser(d){
   if(!d)return;
@@ -1711,217 +1347,9 @@ function _applyUser(d){
   if(!S.done||S.done._day!==tkey())S.done={_day:tkey()};
 }
 
-let _saveTimer=null;
 function save(){
-  // Anında localStorage
   try{localStorage.setItem('cm6',JSON.stringify({name:S.name,city:S.city,lat:S.lat,lon:S.lon,gpsLabel:S.gpsLabel,alarms:S.alarms,cfg:S.cfg,sozler:S.sozler,done:S.done}));}catch(e){}
-  // 1.5sn debounce ile Firestore'a yaz
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(async()=>{
-    try{
-      await _fbReady;
-      await fdb.collection('users').doc(getUID()).set({
-        name:S.name||'',city:S.city||'',lat:S.lat??null,lon:S.lon??null,
-        alarms:S.alarms||{},cfg:S.cfg||{},sozler:S.sozler||[],done:S.done||{},
-        updated:Date.now(),
-      },{merge:true});
-      syncBadge('☁️ Kaydedildi');
-    }catch(e){console.warn('Kaydetme hatası:',e.message);}
-  },1500);
 }
-
-// ── Grup işlemleri ────────────────────────────────────
-
-function cacheGroupsLocally(){
-  try{localStorage.setItem('cm6_groups',JSON.stringify(S.groups||[]));}catch(e){}
-}
-function loadCachedGroups(){
-  try{
-    const g=JSON.parse(localStorage.getItem('cm6_groups')||'null');
-    if(Array.isArray(g)&&g.length)S.groups=g;
-  }catch(e){}
-}
-
-async function loadGroups(){
-  try{
-    await _fbReady;
-    const uid=getUID();
-    const idsSnap=await fdb.collection('userGroups').doc(uid).collection('groups').get();
-    const groups=(await Promise.all(idsSnap.docs.map(d=>_fetchGroupFull(d.id)))).filter(Boolean);
-    S.groups=groups;S._groupsLoaded=true;cacheGroupsLocally();
-    renderGroups&&renderGroups();
-  }catch(e){
-    console.warn('Gruplar yüklenemedi:',e.message);
-    if(!S.groups||!S.groups.length)S._groupsLoaded='offline';
-    renderGroups&&renderGroups();
-  }
-}
-
-// Yeni grup oluştur — createGroup() içinden çağrılır
-async function _serverCreateGroup(name,emoji){
-  try{
-    await _fbReady;
-    const uid=getUID();
-    const groupId=fdb.collection('groups').doc().id;
-    // Benzersiz 6 haneli davet kodu üret (çok küçük ihtimalle çakışırsa yeniden dener)
-    let code,codeRef;
-    for(let i=0;i<5;i++){
-      code=Math.random().toString(36).slice(2,8).toUpperCase();
-      codeRef=fdb.collection('inviteCodes').doc(code);
-      if(!(await codeRef.get()).exists)break;
-    }
-    const now=Date.now(),day=tkey();
-    const chat=[{type:'event',txt:`🕌 "${name}" grubu oluşturuldu!`,time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}];
-
-    await fdb.collection('groups').doc(groupId).set({name,emoji:emoji||'🕌',inviteCode:code,chat,dayKey:day,created:now});
-    await fdb.collection('groups').doc(groupId).collection('members').doc(uid).set({name:S.name||'Ben',done:{},kildiAt:'',joined:now});
-    await fdb.collection('userGroups').doc(uid).collection('groups').doc(groupId).set({joined:now});
-    await codeRef.set({groupId});
-
-    const g=await _fetchGroupFull(groupId);
-    S.groups.push(g);S.curGroup=g.id;renderGroups&&renderGroups();
-    return g;
-  }catch(e){console.warn('Grup oluşturulamadı:',e.message);toast('Grup oluşturulamadı: '+e.message,false);return null;}
-}
-
-// Gruba katıl — joinByCode() içinden çağrılır
-async function _serverJoinGroup(inviteCode){
-  syncBadge('🔍 Grup aranıyor...',0);
-  try{
-    await _fbReady;
-    const uid=getUID();
-    const codeDoc=await fdb.collection('inviteCodes').doc(inviteCode.toUpperCase()).get();
-    syncBadge('');
-    if(!codeDoc.exists){toast('Grup bulunamadı. Kod yanlış olabilir.',false);return null;}
-    const groupId=codeDoc.data().groupId;
-    const memberRef=fdb.collection('groups').doc(groupId).collection('members').doc(uid);
-    const already=(await memberRef.get()).exists;
-    const now=Date.now();
-    if(!already){
-      await memberRef.set({name:S.name||'Ben',done:{},kildiAt:'',joined:now});
-      await fdb.collection('userGroups').doc(uid).collection('groups').doc(groupId).set({joined:now});
-      // Sohbete katılma bildirimi ekle (üyelik artık var, update izni geçerli)
-      const gRef=fdb.collection('groups').doc(groupId);
-      await fdb.runTransaction(async tx=>{
-        const gDoc=await tx.get(gRef);
-        const chat=(gDoc.data().chat||[]);
-        chat.push({type:'event',txt:`👤 ${S.name||'Ben'} gruba katıldı!`,time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})});
-        tx.update(gRef,{chat:chat.slice(-200)});
-      });
-    }
-    const g=await _fetchGroupFull(groupId);
-    const exists=S.groups.find(x=>x.id===g.id);
-    if(!exists)S.groups.push(g);else Object.assign(exists,g);
-    S.curGroup=g.id;
-    renderGroups&&renderGroups();
-    return {alreadyMember:already,group:g};
-  }catch(e){
-    syncBadge('');
-    console.warn('Gruba katılamadı:',e.message);
-    toast('Gruba katılamadı: '+e.message,false);
-    return null;
-  }
-}
-
-// Namaz durumu güncelle
-// ÖNEMLİ: Gün değiştiyse HERKESİN durumu, bizim yazımızdan ÖNCE sıfırlanır —
-// aksi halde kendi az önce işaretlediğimiz "kıldım" durumu da anında silinirdi.
-async function updateMemberDone(groupId,done,kildiAt=''){
-  const g=S.groups.find(x=>x.id===groupId);
-  if(g){const me=g.members.find(m=>m.userId===getUID());if(me){me.done=done;me.kildiAt=kildiAt;}}
-  try{
-    await _fbReady;
-    const gRef=fdb.collection('groups').doc(groupId);
-    const gDoc=await gRef.get();
-    if(gDoc.exists&&gDoc.data().dayKey!==tkey()){
-      const mSnap=await gRef.collection('members').get();
-      const batch=fdb.batch();
-      mSnap.docs.forEach(d=>batch.update(d.ref,{done:{},kildiAt:''}));
-      batch.update(gRef,{dayKey:tkey()});
-      await batch.commit();
-    }
-    await gRef.collection('members').doc(getUID()).update({done,kildiAt});
-  }catch(e){console.warn('Durum güncellenemedi:',e.message);}
-}
-
-// Namaz bildirimini (kim hangi vakti kıldı) sohbete gerçekten yazar —
-// önceden sadece yerel ekranda gösterilip hiç sunucuya gitmiyordu, bu yüzden
-// diğer üyeler bu bildirimi hiç görmüyordu.
-async function _sendPrayServer(groupId,vakit,msgTxt){
-  try{
-    await _fbReady;
-    const uid=getUID();
-    const entry={type:'pray',sender:S.name||'Ben',userId:uid,vakit,time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),msg:msgTxt};
-    const gRef=fdb.collection('groups').doc(groupId);
-    await fdb.runTransaction(async tx=>{
-      const gDoc=await tx.get(gRef);
-      const chat=(gDoc.data().chat||[]);
-      chat.push(entry);
-      tx.update(gRef,{chat:chat.slice(-200)});
-    });
-  }catch(e){console.warn('Namaz bildirimi gönderilemedi:',e.message);}
-}
-
-// Mesaj gönder
-async function _sendMsgServer(groupId,txt){
-  try{
-    await _fbReady;
-    const uid=getUID();
-    const mDoc=await fdb.collection('groups').doc(groupId).collection('members').doc(uid).get();
-    const senderName=mDoc.exists?mDoc.data().name:(S.name||'Ben');
-    const msg={type:'msg',sender:senderName,userId:uid,txt:txt.trim(),time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),reactions:[]};
-    const gRef=fdb.collection('groups').doc(groupId);
-    await fdb.runTransaction(async tx=>{
-      const gDoc=await tx.get(gRef);
-      const chat=(gDoc.data().chat||[]);
-      chat.push(msg);
-      tx.update(gRef,{chat:chat.slice(-200)});
-    });
-    return msg;
-  }catch(e){console.warn('Mesaj gönderilemedi:',e.message);return null;}
-}
-
-// Gerçek zamanlı dinleyiciler zaten anlık güncellediği için bu artık sadece
-// açık grup yokken/ilk açılışta manuel bir tazeleme yedeği.
-async function refreshChat(groupId){
-  if(!groupId)return;
-  try{
-    await _fbReady;
-    const g=await _fetchGroupFull(groupId);
-    if(!g)return;
-    const local=S.groups.find(x=>x.id===groupId);
-    if(local){
-      const prevLen=local.chat.length;
-      local.chat=g.chat;local.members=g.members;
-      renderChat&&renderChat();
-      if(g.chat.length>prevLen){
-        const newMsgs=g.chat.slice(prevLen);
-        const incoming=newMsgs.some(m=>(m.type==='msg'||m.type==='pray')&&!m.mine&&m.userId!==getUID());
-        if(incoming){playMsgSound(false);try{if(navigator.vibrate)navigator.vibrate([40,30,40]);}catch(e){}}
-      }
-    }
-  }catch(e){/* sessiz geç */}
-}
-
-// Gruptan ayrıl
-async function leaveGroup(groupId){
-  try{
-    await _fbReady;
-    const uid=getUID();
-    await fdb.collection('groups').doc(groupId).collection('members').doc(uid).delete();
-    await fdb.collection('userGroups').doc(uid).collection('groups').doc(groupId).delete();
-  }catch(e){console.warn('Gruptan ayrılırken hata:',e.message);}
-  S.groups=S.groups.filter(x=>x.id!==groupId);
-  if(S.curGroup===groupId)S.curGroup=null;
-  renderGroups&&renderGroups();
-}
-
-// ── Ayarlar: eski "Sunucu Bağlantısı" alanı artık Firebase kullanıyor ──
-// Firebase yapılandırması kod içine gömülü olduğu için kullanıcının bir
-// URL girmesine gerek yok; bu fonksiyonlar geriye dönük uyumluluk için
-// zararsız hale getirildi.
-function saveApiUrl(){toast('Bu sürüm Firebase kullanıyor, ayrıca bir sunucu adresi girmenize gerek yok.',true);}
-function fillApiUrl(){const inp=document.getElementById('api-url-inp');if(inp){inp.value=(firebaseConfig.projectId||'')+' (Firebase)';inp.disabled=true;}}
 
 // ═══════════════════════════════════════════
 // DİYANET / ALADHAN API — Gerçek Zamanlı Vakitler
@@ -1934,12 +1362,13 @@ async function fetchRealTimes(lat,lon,method){
   const mm=String(today.getMonth()+1).padStart(2,'0');
   const yyyy=today.getFullYear();
   try{
-    const r=await fetch(`https://api.aladhan.com/v1/timings/${dd}-${mm}-${yyyy}?latitude=${lat}&longitude=${lon}&method=${m}&school=1`,{signal:AbortSignal.timeout(8000)});
+    const r=await fetch(`https://api.aladhan.com/v1/timings/${dd}-${mm}-${yyyy}?latitude=${lat}&longitude=${lon}&method=${m}`,{signal:AbortSignal.timeout(8000)});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const d=await r.json();
     if(d.code!==200||!d.data)throw new Error('API yanıt hatası');
     const t=d.data.timings;
-    const toTR=hm=>{if(!hm)return'--:--';const[h,mn]=hm.split(':').map(Number);const tr=(h+3)%24;return String(tr).padStart(2,'0')+':'+String(mn).padStart(2,'0');};
+    // AlAdhan, saatleri zaten konumun yerel saat diliminde verir (+3 eklemek vakitleri kaydırıyordu).
+    const toTR=hm=>{if(!hm)return'--:--';const[h,mn]=String(hm).split(' ')[0].split(':').map(Number);return String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0');};
     return{imsak:toTR(t.Imsak),sabah:toTR(t.Fajr),gunes:toTR(t.Sunrise),ogle:toTR(t.Dhuhr),ikindi:toTR(t.Asr),aksam:toTR(t.Maghrib),yatsi:toTR(t.Isha)};
   }catch(e){
     if(typeof logError==='function')logError('AlAdhan hatası: '+e.message);
@@ -1947,22 +1376,24 @@ async function fetchRealTimes(lat,lon,method){
   }
 }
 
-let _lastTimeFetch='';
+let _apiTimes=null,_apiKey='',_apiFetching=false,_apiLastFail=0;
+const apiKeyNow=()=>new Date().toDateString()+'|'+(+S.lat).toFixed(2)+'|'+(+S.lon).toFixed(2)+'|'+S.cfg.method;
 async function maybeUpdateTimes(){
   if(!S.lat)return;
-  const today=new Date().toDateString();
-  if(_lastTimeFetch===today)return;
-  _lastTimeFetch=today;
+  const key=apiKeyNow();
+  if(_apiKey===key&&_apiTimes)return;
+  try{const c=JSON.parse(localStorage.getItem('cm6_times')||'null');
+    if(c&&c.key===key){_apiTimes=c.times;_apiKey=key;render();return;}}catch(e){}
+  if(_apiFetching||Date.now()-_apiLastFail<5*60000)return;
+  _apiFetching=true;
   const times=await fetchRealTimes(S.lat,S.lon,S.cfg.method);
+  _apiFetching=false;
   if(times){
-    S.times={...S.times,...times};
-    try{localStorage.setItem('cm6_times_'+today,JSON.stringify(times));}catch(e){}
-    if(typeof schedAlarms==='function')schedAlarms();
+    _apiTimes=times;_apiKey=key;
+    try{localStorage.setItem('cm6_times',JSON.stringify({key,times}));}catch(e){}
+    render();
     if(typeof schedPushNotifs==='function')schedPushNotifs();
-    if(typeof toast==='function')toast('⏱ Vakitler güncellendi (Diyanet)');
-  } else {
-    try{const cached=localStorage.getItem('cm6_times_'+today);if(cached)S.times={...S.times,...JSON.parse(cached)};}catch(e){}
-  }
+  }else _apiLastFail=Date.now();
 }
 
 function toJD(d){let y=d.getFullYear(),m=d.getMonth()+1,dd=d.getDate();if(m<=2){y--;m+=12;}const A=Math.floor(y/100),B=2-A+Math.floor(A/4);return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+dd+B-1524.5;}
@@ -2072,7 +1503,7 @@ const showPage=id=>{
   if(pg){pg.classList.add('show');pg.style.display='';}
   window.scrollTo(0,0);
 };
-function goMain(){showPage('pg-main');render();renderGroups();renderSozler();}
+function goMain(){showPage('pg-main');render();renderSozler();}
 
 // ═══════════════════════════════════════════
 // TABS
@@ -2083,25 +1514,12 @@ function showTab(name,btn){
   document.querySelectorAll('.bot-nav .nb').forEach(b=>b.classList.remove('act'));
   (btn||document.getElementById('nb-'+name))?.classList.add('act');
   if(name==='kible')initKible();
-  if(name==='ayarlar'){renderSetPage();setTimeout(fillApiUrl,100);if(typeof renderErrorLog==='function')renderErrorLog();}
+  if(name==='ayarlar'){renderSetPage();if(typeof renderErrorLog==='function')renderErrorLog();}
   if(name==='sozler')renderSozler();
-  if(name==='gruplar')renderGroups();
   if(name==='tesbih'&&typeof initTesbih==='function')initTesbih();
   if(name==='ramazan'&&typeof initRmz==='function')initRmz();
   if(name==='huzur'&&typeof initHuzur==='function')initHuzur();
 }
-function showGTab(name,btn){
-  document.querySelectorAll('.gtab-body').forEach(t=>t.classList.remove('show'));
-  document.getElementById('gtab-'+name)?.classList.add('show');
-  document.querySelectorAll('.gtab').forEach(b=>b.classList.remove('act'));
-  if(btn)btn.classList.add('act');
-  if(name==='gchat'){renderChat();setTimeout(()=>{const el=document.getElementById('chat-msgs');if(el)el.scrollTop=99999;},50);}
-  if(name==='gstats')renderStats();
-  if(name==='guyeler')renderFullMem();
-  if(name==='gorevler')renderGorevler();
-  if(name==='gnamaz')renderFamilyDua();
-}
-
 // ═══════════════════════════════════════════
 // LOCATION
 // ═══════════════════════════════════════════
@@ -2172,6 +1590,7 @@ function render(){
   if(!S.lat)return;
   const now=new Date();
   S.times=calcT(S.lat,S.lon,now,S.cfg.method);
+  if(_apiTimes&&_apiKey===apiKeyNow())S.times={...S.times,..._apiTimes};
   const h=now.getHours();
   const greet=h<5?'Hayırlı geceler':h<12?'Hayırlı sabahlar':h<17?'Hayırlı öğleler':h<20?'Hayırlı akşamlar':'Hayırlı geceler';
   document.getElementById('greet').textContent=greet;
@@ -2506,962 +1925,6 @@ function addSoz(){
   save();closeModal('soz-add-modal');renderSozler();toast('Eklendi! 📖');
 }
 function delSoz(i){S.sozler.splice(i,1);save();renderSozler();toast('Silindi.');}
-
-// Yapay zeka ile otomatik doldurma — Firebase Cloud Functions üzerindeki
-// "duaFill" fonksiyonunu çağırır (Gemini anahtarı orada, sunucu tarafında
-// gizli tutulur; tarayıcıya asla gönderilmez).
-// NOT: Bu anahtar tarayıcı kodunda açık durur (Blaze/Cloud Functions kullanılmıyor,
-// bilinçli bir tercih). Gemini'nin ücretsiz katmanı kredi kartı istemediği için
-// en kötü ihtimalle biri anahtarı bulup ücretsiz kotayı tüketir — herhangi bir
-// ücret riski yoktur.
-const GEMINI_API_KEY='AQ.Ab8RN6LlLwPwRLwd_uz4OzqNSXa_OvwGu0wdQPbZb-_a6ULfTw';
-const GEMINI_MODELS=['gemini-2.5-flash-lite','gemini-2.5-flash','gemini-3.5-flash-lite'];
-
-async function aiFillSoz(){
-  const title=document.getElementById('soz-title-inp').value.trim();
-  if(!title){toast('Önce bir başlık yazın (ör. "Ayet-el Kürsi").',false);return;}
-  const btn=document.getElementById('ai-fill-btn');
-  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Yapay zeka düşünüyor...';
-  try{
-    const prompt=`Sen İslami bir dua/sure/ayet veritabanı asistanısın. Kullanıcı şu başlığı verdi: "${title}".
-Bu bir Kur'an suresi, ayeti veya bilinen bir dua/hadis olabilir.
-SADECE aşağıdaki JSON formatında, başka hiçbir açıklama eklemeden cevap ver:
-{"arabic":"<doğru harekeli Arapça metin>","meaning":"<sade, doğru Türkçe anlamı/meali>","src":"<kaynak, örn. 'Kur'an-ı Kerim · Bakara 255' veya 'Hadis-i Şerif'>"}
-Eğer başlık tanınmıyorsa veya emin değilsen, {"error":"bulunamadı"} döndür. Metinleri uydurma, sadece kesin bildiğin, doğru ve yaygın kabul gören metinleri ver.`;
-    let data=null;
-    for(const model of GEMINI_MODELS){
-      try{
-        const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})
-        });
-        if(r.ok){data=await r.json();break;}
-      }catch(e){/* bir sonraki modeli dene */}
-    }
-    if(!data)throw new Error('Hiçbir model yanıt vermedi');
-    const raw=(data.candidates?.[0]?.content?.parts?.[0]?.text||'').replace(/^```json\s*|```\s*$/g,'').trim();
-    const parsed=JSON.parse(raw);
-    if(parsed.error||!parsed.arabic){
-      toast('Bu başlık için güvenilir bir metin bulunamadı.',false);
-    }else{
-      document.getElementById('soz-txt').value=parsed.arabic;
-      document.getElementById('soz-meaning-inp').value=parsed.meaning||'';
-      if(parsed.src)document.getElementById('soz-src').value=parsed.src;
-      toast('Yapay zeka doldurdu, kontrol edip kaydedebilirsin ✨');
-    }
-  }catch(e){
-    console.warn('AI doldurma hatası:',e.message);
-    toast('Yapay zeka şu an cevap veremedi. Elle doldurabilirsin.',false);
-  }
-  btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-wand-magic-sparkles"></i> Yapay Zeka ile Doldur';
-}
-
-
-// ═══════════════════════════════════════════
-// GROUPS
-// ═══════════════════════════════════════════
-const avC=n=>{let s=0;for(const c of n)s+=c.charCodeAt(0);return AVC[s%AVC.length];};
-const initials=n=>(n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-function renderGroups(){
-  const el=document.getElementById('grp-list');if(!el)return;
-  el.innerHTML='';
-  cacheGroupsLocally();
-  if(!S.groups||!S.groups.length){
-    const loading=!S._groupsLoaded;
-    const offline=S._groupsLoaded==='offline';
-    el.innerHTML=loading
-      ?'<div style="text-align:center;padding:30px 15px;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">⏳</div><div style="font-size:14px;font-weight:800">Gruplar yükleniyor…</div><div style="font-size:12px;margin-top:6px">Az önce bir grup oluşturduysanız birazdan görünecek</div></div>'
-      :offline
-      ?'<div style="text-align:center;padding:30px 15px;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">📴</div><div style="font-size:14px;font-weight:800">Sunucuya bağlanılamadı</div><div style="font-size:12px;margin-top:6px">Grupların varsa bağlantı geri gelince görünecek. Kaybolmadılar.</div><button class="loc-btn" style="margin-top:12px;display:inline-flex" onclick="loadGroups()"><i class="fa-solid fa-rotate"></i> Tekrar Dene</button></div>'
-      :'<div style="text-align:center;padding:30px 15px;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">🕌</div><div style="font-size:14px;font-weight:800">Henüz grup yok</div><div style="font-size:12px;margin-top:6px">Yeni grup oluştur veya davet kodu ile katıl</div></div>';
-    return;
-  }
-  S.groups.forEach(g=>{
-    if(!g.members)g.members=[];
-    if(!g.chat)g.chat=[];
-    const cv=curVakit();
-    const kd=g.members.filter(m=>m.done&&m.done[cv]);
-    const lastMsg=g.chat.filter(m=>m.type==='msg'||m.type==='pray').slice(-1)[0];
-    const unread=g._lastReadIdx!=null?g.chat.filter((m,i)=>i>=(g._lastReadIdx||0)&&(m.type==='msg'||m.type==='pray')&&!m.mine).length:0;
-    const card=document.createElement('div');card.className='grp-card';
-    const totDone=g.members.reduce((s,m)=>s+PK.filter(k=>m.done&&m.done[k]).length,0);
-    const maxPoss=g.members.length*PK.length;
-    const pct=maxPoss?Math.round(totDone/maxPoss*100):0;
-    card.innerHTML=`
-      <div class="grp-emo">${g.emoji||'🕌'}</div>
-      <div class="grp-info">
-        <div class="grp-name">${escHtml(g.name||'Grup')}</div>
-        <div class="grp-sub">${lastMsg?(lastMsg.type==='pray'?'🕌 '+escHtml(lastMsg.sender)+' namaz kıldı':escHtml(lastMsg.sender)+': '+escHtml((lastMsg.txt||'').slice(0,28))+((lastMsg.txt||'').length>28?'…':'')):g.members.length+' üye'}</div>
-        <div class="prog-bar" style="margin-top:6px;height:3px"><div class="prog-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-        <span class="bdg ${kd.length===g.members.length&&g.members.length>0?'g':'a'}" style="font-size:9px">${kd.length}/${g.members.length}</span>
-        ${unread>0?`<span style="background:var(--green2);color:#fff;font-size:10px;font-weight:900;border-radius:99px;padding:1px 7px;min-width:18px;text-align:center">${unread}</span>`:''}
-      </div>`;
-    card.onclick=()=>openGroup(g.id);
-    const actWrap=document.createElement('div');actWrap.className='grp-act-wrap';
-    actWrap.innerHTML=`<button onclick="event.stopPropagation();quickEditGroup('${g.id}')"><i class="fa-solid fa-pen"></i></button><button onclick="event.stopPropagation();quickDeleteGroup('${g.id}')"><i class="fa-solid fa-trash"></i></button>`;
-    card.appendChild(actWrap);el.appendChild(card);
-  });
-}
-function openGroup(id){
-  const g=S.groups.find(x=>x.id===id);if(!g)return;S.curGroup=id;
-  if(!g.members)g.members=[];if(!g.chat)g.chat=[];
-  stampIsMe(g);
-  const ac=avC(g.name);
-  document.getElementById('gd-emo').style.cssText=`background:${ac.bg};color:${ac.cl};font-size:26px;`;
-  document.getElementById('gd-emo').textContent=g.emoji||'🕌';
-  document.getElementById('gd-title').textContent=g.name;
-  document.getElementById('gd-sub').textContent=g.members.length+' üye';
-  showPage('pg-group');
-  document.querySelectorAll('.gtab-body').forEach(t=>t.classList.remove('show'));
-  document.getElementById('gtab-gnamaz').classList.add('show');
-  document.querySelectorAll('.gtab').forEach(b=>b.classList.remove('act'));
-  document.querySelectorAll('.gtab')[0].classList.add('act');
-  renderNamazTab(g);
-  renderFamilyDua();
-  startGroupPolling();
-}
-function backToMain(){showPage('pg-main');stopGroupPolling();renderGroups();}
-function renderNamazTab(g){
-  stampIsMe(g);
-  const cv=curVakit();
-  const me=g.members.find(m=>m.isMe);
-  const done=me&&me.done&&me.done[cv];
-  const btn=document.getElementById('big-kil-btn');
-  const txt=document.getElementById('big-kil-txt');
-  if(!btn||!txt)return;
-  txt.textContent=(PL[cv]||'NAMAZ')+' NAMAZINI KILDIM';
-  btn.className='big-kil-btn'+(done?' done':'');
-  if(done)txt.textContent='✓ '+PL[cv]+' Namazını Kıldın';
-  const kildi=g.members.filter(m=>m.done&&m.done[cv]);
-  const cntEl=document.getElementById('grp-cnt');
-  if(cntEl)cntEl.textContent=kildi.length+'/'+g.members.length+' kıldı';
-  const sl=document.getElementById('mem-status-list');if(!sl)return;sl.innerHTML='';
-  [...g.members].sort((a,b)=>((b.done&&b.done[cv])?1:0)-((a.done&&a.done[cv])?1:0)).forEach(m=>{
-    const ac=avC(m.name),kd=m.done&&m.done[cv];
-    const item=document.createElement('div');item.className='mem-item'+(kd?' kdi':' wait');
-    const dmBtn=!m.isMe?`<button class="dm-btn" onclick="dmUser('${escHtml(m.name)}')"><i class="fa-solid fa-comment"></i> Mesaj</button>`:'';
-    item.innerHTML=`<div class="mem-left"><div class="mem-av" style="background:${ac.bg};color:${ac.cl}">${initials(m.name)}</div><div><div class="mem-name">${escHtml(m.name)}${m.isMe?' <span style="font-size:9px;background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:99px;font-weight:800">Ben</span>':''}</div><div class="mem-sub ${kd?'g':'a'}">${kd?(m.kildiAt||'Kıldı'):'Henüz kılmadı...'}</div>${dmBtn}</div></div><span class="bdg ${kd?'g':'a'}"><i class="fa-solid ${kd?'fa-check':'fa-hourglass-half'}" style="font-size:9px"></i> ${kd?'Kıldı':'Bekliyor'}</span>`;
-    sl.appendChild(item);
-  });
-}
-function handleGroupKil(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  stampIsMe(g);
-  const cv=curVakit();
-  let me=g.members.find(m=>m.isMe);
-  if(!me){
-    // Son çare: bu cihazın userId'sine sahip üyeyi bul, hâlâ yoksa
-    // kendini grubun üyesi olarak ekle (eski/bozuk grup verisi için).
-    const uid=getUID();
-    me=g.members.find(m=>m.userId===uid);
-    if(!me){
-      me={name:S.name||'Ben',userId:uid,done:{},kildiAt:'',isMe:true};
-      g.members.push(me);
-    }
-    me.isMe=true;
-    save();
-  }
-  if(me.done&&me.done[cv]){toast('Bu vakti zaten kıldın! ✅');return;}
-  if(!me.done)me.done={};
-  me.done[cv]=true;me.kildiAt=nowTime()+' kıldı';
-  // Anlık göster (optimistic UI) — gerçek yazı _sendPrayServer ile sunucuya gidiyor,
-  // onSnapshot geri dönünce zaten gerçek veriyle üzerine yazılacak.
-  if(!g.chat)g.chat=[];
-  const prayTxt=_prayMsg(PL[cv]||cv);
-  g.chat.push({type:'pray',sender:S.name||me.name||'Ben',vakit:PL[cv]||cv,time:nowTime(),msg:prayTxt});
-  S.done[cv]=true;
-  save();confetti();showKilModal(cv);
-  renderNamazTab(g);renderDots();renderList();renderGroups();
-  // Sunucu güncellemesi — hem "kıldım" durumu hem grup sohbetindeki bildirim
-  updateMemberDone(S.curGroup,me.done,me.kildiAt).catch(()=>{});
-  _sendPrayServer(S.curGroup,PL[cv]||cv,prayTxt).catch(()=>{});
-  // Chat açıksa yenile
-  const chatEl=document.getElementById('gtab-gchat');
-  if(chatEl&&chatEl.classList.contains('show'))renderChat();
-}
-
-const _prayMsgs={
-  'Sabah':['🌅 Günün ilk ibadetini tamamladı! Hayırlı sabahlar.','🌄 Sabah namazıyla gündüze başladı. MaşAllah!','⭐ Fecrin bereketini yaşadı. Allah kabul etsin.'],
-  'Öğle':['☀️ Öğle vakti Rabbine yöneldi.','🕐 Gün ortasında namazını kıldı. Hayırlı olsun!','✨ Öğle namazını eda etti. Allah kabul etsin.'],
-  'İkindi':['🌤️ İkindi namazını kıldı. Hayırlı ikindiler!','🌻 İkindi vaktini ihya etti. Barakallah!','🙏 Günün ortasında ibadetini tamamladı.'],
-  'Akşam':['🌆 Akşam namazını kıldı. Hayırlı akşamlar!','🌇 Gün batımında Rabbine yöneldi. MaşAllah.','🌅 Akşam vakti namazını eda etti.'],
-  'Yatsı':['🌙 Yatsı namazını kıldı. Hayırlı geceler!','⭐ Gecenin ilk ibadetini tamamladı.','🌟 Yatsı vaktini ihya etti. Allah kabul etsin.'],
-};
-function _prayMsg(vakit){
-  const arr=_prayMsgs[vakit]||['🕌 Namazını kıldı. Allah kabul etsin!'];
-  return arr[Math.floor(Math.random()*arr.length)];
-}
-// ═══════════════════════════════════════════
-// GRUP İÇİ GÜNLÜK GÖREVLER — KAZA / EZBER / DUA
-// ═══════════════════════════════════════════
-const EZBER_DEFAULT=['Fatiha Suresi','Nas Suresi','Felak Suresi','İhlas Suresi','Tebbet Suresi','Nasr Suresi','Kafirun Suresi','Kevser Suresi'];
-const DUA_DEFAULT=['Sabah Duası','Yatsı (Uyku) Duası','Yemek Duası','Evden Çıkış Duası','Ezan Duası','Kunut Duaları'];
-const _taskDay=()=>{const d=new Date();return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();};
-function _taskKey(groupId){return 'cm6_tasks_'+groupId;}
-function loadTasks(groupId){
-  let t=null;
-  try{t=JSON.parse(localStorage.getItem(_taskKey(groupId))||'null');}catch(e){}
-  if(!t)t={day:_taskDay(),kazaToday:0,kazaTotal:0,
-    ezber:EZBER_DEFAULT.map((n,i)=>({id:'e'+i,name:n,done:false})),
-    dua:DUA_DEFAULT.map((n,i)=>({id:'d'+i,name:n,done:false}))};
-  // Gün değiştiyse günlük sayaç ve dua listesi sıfırlansın, ezber kalıcı kalsın
-  if(t.day!==_taskDay()){
-    t.day=_taskDay();t.kazaToday=0;
-    t.dua.forEach(d=>d.done=false);
-    t.familyDua={day:_taskDay(),done:false};
-  }
-  if(!t.ezber)t.ezber=EZBER_DEFAULT.map((n,i)=>({id:'e'+i,name:n,done:false}));
-  if(!t.dua)t.dua=DUA_DEFAULT.map((n,i)=>({id:'d'+i,name:n,done:false}));
-  if(!t.familyDua)t.familyDua={day:_taskDay(),done:false};
-  return t;
-}
-function saveTasks(groupId,t){try{localStorage.setItem(_taskKey(groupId),JSON.stringify(t));}catch(e){}}
-
-// Görev bildirimini gruba mesaj olarak gönder — sohbet ve dua/görev
-// bildirimleri aynı akışta (tek feed) buluşsun diye mevcut chat API'si
-// kullanılıyor.
-async function postGroupEvent(groupId,txt){
-  const g=S.groups.find(x=>x.id===groupId);if(!g)return;
-  if(!g.chat)g.chat=[];
-  g.chat.push({type:'event',txt,time:nowTime()});
-  const chatTab=document.getElementById('gtab-gchat');
-  if(chatTab&&chatTab.classList.contains('show'))renderChat();
-  try{await _sendMsgServer(groupId,txt);}catch(e){}
-  clearTimeout(_chatRefreshTimer);
-  _chatRefreshTimer=setTimeout(()=>refreshChat(groupId),3000);
-}
-
-function renderGorevler(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const t=loadTasks(g.id);
-  document.getElementById('kaza-today').textContent=t.kazaToday;
-  document.getElementById('kaza-total').textContent=t.kazaTotal;
-
-  const eDone=t.ezber.filter(x=>x.done).length;
-  document.getElementById('ezber-cnt').textContent=eDone+'/'+t.ezber.length;
-  document.getElementById('ezber-bar').style.width=(t.ezber.length?Math.round(eDone/t.ezber.length*100):0)+'%';
-  const el=document.getElementById('ezber-list');el.innerHTML='';
-  t.ezber.forEach(item=>{
-    const row=document.createElement('div');row.className='chk-item'+(item.done?' done':'');
-    row.innerHTML=`<div class="chk-box"><i class="fa-solid fa-check"></i></div><div class="chk-name">${escHtml(item.name)}</div><button class="chk-del" onclick="event.stopPropagation();delEzber('${item.id}')"><i class="fa-solid fa-trash"></i></button>`;
-    row.onclick=()=>toggleEzber(item.id);
-    el.appendChild(row);
-  });
-
-  const dDone=t.dua.filter(x=>x.done).length;
-  document.getElementById('dua-cnt').textContent=dDone+'/'+t.dua.length;
-  document.getElementById('dua-bar').style.width=(t.dua.length?Math.round(dDone/t.dua.length*100):0)+'%';
-  const dl=document.getElementById('dua-list');dl.innerHTML='';
-  t.dua.forEach(item=>{
-    const row=document.createElement('div');row.className='chk-item'+(item.done?' done':'');
-    row.innerHTML=`<div class="chk-box"><i class="fa-solid fa-check"></i></div><div class="chk-name">${escHtml(item.name)}</div>`;
-    row.onclick=()=>toggleDua(item.id);
-    dl.appendChild(row);
-  });
-}
-
-function kazaChange(delta){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const t=loadTasks(g.id);
-  if(delta<0&&t.kazaToday<=0)return;
-  t.kazaToday+=delta;t.kazaTotal=Math.max(0,t.kazaTotal+delta);
-  saveTasks(g.id,t);renderGorevler();
-  if(delta>0){
-    confetti();
-    postGroupEvent(g.id,'🕌 '+(S.name||'Ben')+' bir kaza namazı kıldı (bugün: '+t.kazaToday+', toplam: '+t.kazaTotal+') 🤲');
-  }
-}
-
-// ── BERABERCE: Ailece Bugünün Duası ──
-const FAMILY_DUAS=[
-  'Allah\'ım! Ailemizin arasına sevgi, saygı ve huzur ver; bizi birbirimize karşı merhametli kıl.',
-  'Rabbimiz! Eşlerimizi ve çocuklarımızı bize göz aydınlığı eyle, bizi hayırda birleştir.',
-  'Allah\'ım! Evimize bereket, kalplerimize huzur, aramıza muhabbet ver.',
-  'Rabbimiz! Ailemizi dünyada ve ahirette bir arada eyle, bizi birbirimizden ayırma.',
-  'Allah\'ım! Anne-babamıza, çocuklarımıza ve tüm ailemize sağlık, afiyet ve hidayet nasip eyle.',
-  'Rabbimiz! Evimizi ilim, edep ve sevgi yuvası eyle; bizi hayırlı evlatlar olarak büyüt.',
-  'Allah\'ım! Ailece Sana şükrediyoruz; nimetlerini üzerimizden eksik etme.',
-  'Rabbimiz! Aramızdaki bağı kuvvetlendir, dargınlıkları gönüllerimizden sil.',
-  'Allah\'ım! Ailemizi her türlü kötülükten ve nazardan koru, üzerimize rahmetini yağdır.',
-  'Rabbimiz! Bizi birbirimize sabırlı, şefkatli ve vefalı kıl; evimizi huzur meskeni eyle.',
-];
-function _famDuaIdx(){return (new Date().getDate()-1)%FAMILY_DUAS.length;}
-function renderFamilyDua(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const t=loadTasks(g.id);
-  const txtEl=document.getElementById('fam-dua-txt');
-  if(txtEl)txtEl.textContent=FAMILY_DUAS[_famDuaIdx()];
-  const btn=document.getElementById('fam-dua-btn');
-  const btnTxt=document.getElementById('fam-dua-btn-txt');
-  const doneLbl=document.getElementById('fam-dua-done-lbl');
-  if(!btn)return;
-  const isDone=t.familyDua&&t.familyDua.day===_taskDay()&&t.familyDua.done;
-  if(isDone){
-    btn.classList.add('done');
-    btnTxt.textContent='Bugün ailece dua edildi ✓';
-    doneLbl.style.display='block';
-    doneLbl.textContent=(t.familyDua.by?t.familyDua.by+' işaretledi · ':'')+'Allah kabul etsin 🤲';
-  }else{
-    btn.classList.remove('done');
-    btnTxt.textContent='Bugün ailemiz için dua ettik';
-    doneLbl.style.display='none';
-  }
-}
-function toggleFamilyDua(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const t=loadTasks(g.id);
-  const already=t.familyDua&&t.familyDua.day===_taskDay()&&t.familyDua.done;
-  if(already){
-    t.familyDua={day:_taskDay(),done:false};
-    saveTasks(g.id,t);renderFamilyDua();
-    return;
-  }
-  t.familyDua={day:_taskDay(),done:true,by:S.name||'Bir üye'};
-  saveTasks(g.id,t);renderFamilyDua();confetti();
-  postGroupEvent(g.id,'🤲 '+(S.name||'Ben')+' bugün ailemiz için dua ettiğimizi işaretledi. Âmin! 👨‍👩‍👧‍👦');
-}
-
-function addEzber(){
-  const inp=document.getElementById('ezber-inp');const name=inp.value.trim();if(!name)return;
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const t=loadTasks(g.id);
-  t.ezber.push({id:'e'+Date.now(),name,done:false});
-  saveTasks(g.id,t);inp.value='';renderGorevler();
-  toast('Ezber listesine eklendi: '+name);
-}
-function delEzber(id){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const t=loadTasks(g.id);
-  t.ezber=t.ezber.filter(x=>x.id!==id);
-  saveTasks(g.id,t);renderGorevler();
-}
-function toggleEzber(id){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const t=loadTasks(g.id);
-  const item=t.ezber.find(x=>x.id===id);if(!item)return;
-  item.done=!item.done;saveTasks(g.id,t);renderGorevler();
-  if(item.done){confetti();postGroupEvent(g.id,'📿 '+(S.name||'Ben')+' ezberini tazeledi: '+item.name+' ✨');}
-}
-function toggleDua(id){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const t=loadTasks(g.id);
-  const item=t.dua.find(x=>x.id===id);if(!item)return;
-  item.done=!item.done;saveTasks(g.id,t);renderGorevler();
-  if(item.done)postGroupEvent(g.id,'🤲 '+(S.name||'Ben')+' okudu: '+item.name+' · Âmin!');
-}
-
-function renderChat(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const el=document.getElementById('chat-msgs');if(!el)return;
-  el.innerHTML='';
-  const myUid=getUID();
-  g.chat.forEach(function(m,idx){
-    if(m.type==='pray'){
-      const d=document.createElement('div');d.className='chat-pray-ev';
-      d.innerHTML='<div class="chat-pray-ico">🕌</div><div class="chat-pray-info"><div class="chat-pray-name">'+m.sender+' · '+m.vakit+' Namazı</div><div class="chat-pray-txt">'+m.msg+'</div><div class="chat-pray-time">'+m.time+'</div></div><span style="font-size:20px">✅</span>';
-      el.appendChild(d);return;
-    }
-    if(m.type==='event'){
-      const d=document.createElement('div');d.className='chat-ev';d.textContent=m.txt;el.appendChild(d);return;
-    }
-    // Normal mesaj
-    const isMe=m.mine||m.userId===myUid;
-    const senderName=m.sender||(isMe?(S.name||'Ben'):'Anonim');
-    const ac=avC(senderName);
-    const reacts=m.reactions||[];
-    let reactHtml='';
-    if(reacts.length){
-      reacts.forEach(function(r,ri){
-        reactHtml+='<button class="msg-react'+(r.mine?' mine':'')+'" onclick="toggleReact('+idx+','+ri+')">'+r.emoji+' <span class="msg-react-cnt">'+r.count+'</span></button>';
-      });
-      reactHtml='<div class="msg-reactions">'+reactHtml+'</div>';
-    }
-    const senderColor=isMe?'var(--green)':ac.cl;
-    const avLeft=isMe?'':'<div class="msg-av" style="background:'+ac.bg+';color:'+ac.cl+';cursor:pointer" onclick="dmUser(\''+senderName+'\')">'+initials(senderName)+'</div>';
-    const avRight=isMe?'<div class="msg-av" style="background:rgba(61,220,132,.15);color:var(--green)">'+initials(S.name||'B')+'</div>':'';
-    const wrap=document.createElement('div');
-    wrap.className='msg'+(isMe?' me':'');
-    wrap.innerHTML=avLeft+
-      '<div><div class="bubble">'+
-        '<div class="msg-sender" style="color:'+senderColor+'">'+senderName+'</div>'+
-        '<div class="msg-text">'+escHtml(m.txt)+'</div>'+
-        reactHtml+
-        '<div class="msg-time">'+m.time+' <button onclick="addReact('+idx+')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;padding:0 2px;margin-left:4px">😊</button></div>'+
-      '</div></div>'+avRight;
-    el.appendChild(wrap);
-  });
-  el.scrollTop=el.scrollHeight;
-}
-
-function escHtml(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-async function sendMsg(){
-  const inp=document.getElementById('chat-inp');
-  const txt=inp.value.trim();if(!txt)return;
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g){toast('Grup bulunamadı.',false);return;}
-  // Anlık göster (optimistic UI)
-  const uid=getUID();
-  const tmpMsg={type:'msg',sender:S.name||'Ben',userId:uid,mine:true,txt,time:nowTime(),reactions:[]};
-  if(!g.chat)g.chat=[];
-  g.chat.push(tmpMsg);
-  inp.value='';renderChat();
-  playMsgSound(true);
-  setTimeout(()=>{const el=document.getElementById('chat-msgs');if(el)el.scrollTop=99999;},50);
-  // Sunucuya gönder
-  const serverMsg=await _sendMsgServer(S.curGroup,txt);
-  if(!serverMsg){toast('Mesaj gönderilemedi. Çevrimdışı olabilirsiniz.',false);}
-  // 3sn sonra sunucudan güncel listeyi çek
-  clearTimeout(_chatRefreshTimer);
-  _chatRefreshTimer=setTimeout(()=>refreshChat(S.curGroup),3000);
-}
-
-function quickEmoji(e){
-  const inp=document.getElementById('chat-inp');
-  inp.value+=e;inp.focus();
-}
-function toggleQuickEmoji(){
-  document.getElementById('quick-emojis').classList.toggle('show');
-}
-
-// Birinin avatarına tıklayınca sohbet kutusuna @mention yaz
-function dmUser(name){
-  const inp=document.getElementById('chat-inp');
-  inp.value='@'+name+' ';inp.focus();
-  // Chat sekmesine geç
-  const chatTab=document.querySelector('.gtab:nth-child(2)');
-  if(chatTab)showGTab('gchat',chatTab);
-}
-
-const _reactEmojis=['❤️','😂','😮','😢','👍','🤲','🕌','✅'];
-function addReact(msgIdx){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g||!g.chat[msgIdx])return;
-  const msg=g.chat[msgIdx];
-  // Mini seçici göster — basit prompt
-  const e=_reactEmojis[Math.floor(Math.random()*4)]; // Basitçe random seç
-  _doReact(g,msg,e);
-}
-function toggleReact(msgIdx,reactIdx){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g||!g.chat[msgIdx])return;
-  const r=g.chat[msgIdx].reactions[reactIdx];if(!r)return;
-  if(r.mine){r.count--;r.mine=false;if(r.count<=0)g.chat[msgIdx].reactions.splice(reactIdx,1);}
-  else{r.count++;r.mine=true;}
-  save();renderChat();
-}
-function _doReact(g,msg,emoji){
-  if(!msg.reactions)msg.reactions=[];
-  const ex=msg.reactions.find(r=>r.emoji===emoji);
-  if(ex){if(!ex.mine){ex.count++;ex.mine=true;}}
-  else{msg.reactions.push({emoji,count:1,mine:true});}
-  save();renderChat();
-}
-function chatKey(e){if(e.key==='Enter')sendMsg();}
-function renderStats(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  stampIsMe(g);
-  const cv=curVakit();
-  const me=g.members.find(m=>m.isMe);
-  // Bugün kılınan vakitler
-  const myDoneToday=me?PK.filter(k=>me.done&&me.done[k]).length:0;
-  // Grup toplamı
-  const totalDone=g.members.reduce((s,m)=>s+PK.filter(k=>m.done&&m.done[k]).length,0);
-  const maxPossible=g.members.length*PK.length;
-  const grpPct=maxPossible?Math.round(totalDone/maxPossible*100):0;
-  // En aktif üye
-  const topMem=g.members.reduce((best,m)=>{const n=PK.filter(k=>m.done&&m.done[k]).length;return n>(best.n||0)?{name:m.name,n}:best},{});
-  // Mevcut vakitte kaçı kıldı
-  const nowKildi=g.members.filter(m=>m.done&&m.done[cv]).length;
-
-  document.getElementById('stat-grid').innerHTML=`
-    <div class="stat-card"><div class="stat-val">${myDoneToday}/5</div><div class="stat-lbl">Bugün Kıldığın</div></div>
-    <div class="stat-card"><div class="stat-val">${grpPct}%</div><div class="stat-lbl">Grup Ortalaması</div></div>
-    <div class="stat-card"><div class="stat-val">${nowKildi}/${g.members.length}</div><div class="stat-lbl">Şu An Kıldı</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:var(--gold)">🔥${myDoneToday>=5?'5':myDoneToday>=4?'4':myDoneToday>=2?'2':'1'}</div><div class="stat-lbl">Günlük Seri</div></div>
-  `;
-
-  // Üye başarı tablosu
-  const bw=document.getElementById('bars-wrap'),bd=document.getElementById('bars-days');
-  bw.innerHTML='';bd.innerHTML='';
-
-  // Her üye için bugün kılınan vakit sayısı
-  const sorted=[...g.members].sort((a,b)=>{
-    const an=PK.filter(k=>a.done&&a.done[k]).length;
-    const bn=PK.filter(k=>b.done&&b.done[k]).length;
-    return bn-an;
-  });
-
-  sorted.forEach(m=>{
-    const n=PK.filter(k=>m.done&&m.done[k]).length;
-    const pct=Math.round(n/5*100);
-    const ac=avC(m.name);
-    const bc=document.createElement('div');
-    bc.className='bar-col';
-    bc.innerHTML=`<div class="bar${m.isMe?' today':''}" style="height:${Math.max(4,Math.round(n/5*62))}px;background:${m.isMe?'var(--green)':ac.cl};opacity:${m.isMe?1:0.7}"></div>`;
-    bw.appendChild(bc);
-    const dc=document.createElement('div');
-    dc.className='bar-col';
-    dc.innerHTML=`<div class="bar-day" style="${m.isMe?'color:var(--green);font-weight:900':''}" title="${m.name}">${initials(m.name)}</div>`;
-    bd.appendChild(dc);
-  });
-
-  // Vakit bazlı istatistik (mevcut bars-wrap/bars-days elemanlarını tekrar oluşturmadan, altına ekler)
-  const weekCard=document.querySelector('.week-card');
-  if(weekCard){
-    let extra=weekCard.querySelector('.vakit-stat-extra');
-    if(!extra){
-      extra=document.createElement('div');
-      extra.className='vakit-stat-extra';
-      weekCard.appendChild(extra);
-    }
-    let vakitHtml='<h4 style="margin-top:14px">Vakit Bazlı Grup Durumu</h4><div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">';
-    PK.forEach(k=>{
-      const kildi=g.members.filter(m=>m.done&&m.done[k]).length;
-      const pct=g.members.length?Math.round(kildi/g.members.length*100):0;
-      vakitHtml+=`<div style="display:flex;align-items:center;gap:8px;font-size:12px">
-        <span style="width:52px;color:var(--t2);font-weight:700;flex-shrink:0">${PL[k]||k}</span>
-        <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:${pct}%;background:${PC[k]||'var(--green)'}"></div></div>
-        <span style="width:38px;text-align:right;font-weight:800;color:${kildi===g.members.length?'var(--green)':'var(--t3)'}">${kildi}/${g.members.length}</span>
-      </div>`;
-    });
-    vakitHtml+='</div>';
-    extra.innerHTML=vakitHtml;
-  }
-}
-function renderFullMem(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  stampIsMe(g);
-  const el=document.getElementById('full-mem-list');if(!el)return;
-  el.innerHTML='';
-  const cv=curVakit();
-  [...g.members].sort((a,b)=>{
-    const an=PK.filter(k=>a.done&&a.done[k]).length;
-    const bn=PK.filter(k=>b.done&&b.done[k]).length;
-    return bn-an;
-  }).forEach((m,idx)=>{
-    const realIdx=g.members.indexOf(m);
-    const ac=avC(m.name);
-    const cnt=PK.filter(k=>m.done&&m.done[k]).length;
-    const kd=m.done&&m.done[cv];
-    const item=document.createElement('div');item.className='mem-item';
-    item.style.cssText='gap:8px;';
-    // Vakit göstergeleri
-    let vakitDots='';
-    PK.forEach(k=>{
-      const v=m.done&&m.done[k];
-      vakitDots+=`<span title="${PL[k]||k}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${v?(PC[k]||'var(--green)'):'rgba(128,128,128,.25)'};margin-right:2px"></span>`;
-    });
-    item.innerHTML=`
-      <div class="mem-left" style="flex:1;min-width:0">
-        <div class="mem-av" style="background:${ac.bg};color:${ac.cl}">${initials(m.name)}</div>
-        <div style="min-width:0;flex:1">
-          <div class="mem-name">${escHtml(m.name)}${m.isMe?' <span style="font-size:9px;background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:99px;font-weight:800">Ben</span>':''}</div>
-          <div style="margin-top:4px">${vakitDots}</div>
-          <div class="mem-sub" style="margin-top:2px">Bugün ${cnt}/5 vakit · ${kd?'✅ Şu an kıldı':'⏳ Bekliyor'}</div>
-        </div>
-      </div>
-      <span class="bdg ${cnt>=5?'g':cnt>=3?'':'a'}" style="margin-right:2px">${cnt}/5</span>
-      ${!m.isMe?`
-        <button onclick="editMember(${realIdx})" style="width:30px;height:30px;border-radius:8px;background:rgba(232,197,71,.1);border:1px solid rgba(232,197,71,.25);color:var(--gold);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-pen"></i></button>
-        <button onclick="deleteMember(${realIdx})" style="width:30px;height:30px;border-radius:8px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);color:var(--red);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-trash"></i></button>
-      `:'<div style="width:68px"></div>'}
-    `;
-    el.appendChild(item);
-  });
-}
-function openCreateGroup(){
-  document.getElementById('cg-name').value='';
-  selEmoVal='🕌';
-  document.querySelectorAll('.emoji-opt').forEach((b,i)=>b.classList.toggle('sel',i===0));
-  // Ensure button is in create mode
-  const btn=document.querySelector('#cg-modal .btn-green.full');
-  if(btn){btn.innerHTML='<i class="fa-solid fa-check"></i> Grubu Oluştur';btn.onclick=createGroup;}
-  openModal('cg-modal');
-}
-function selEmo(btn,e){document.querySelectorAll('.emoji-opt').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selEmoVal=e;}
-
-function genCode(){
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let c='';for(let i=0;i<6;i++)c+=chars[Math.floor(Math.random()*chars.length)];
-  // Mevcut kodlarla çakışıyor mu?
-  if(S.groups.find(g=>g.inviteCode===c))return genCode();
-  return c;
-}
-
-async function createGroup(){
-  const name=document.getElementById('cg-name').value.trim();
-  if(!name){toast('Grup adı girin.',false);return;}
-  closeModal('cg-modal');
-  toast('Grup oluşturuluyor...');
-  const g=await _serverCreateGroup(name,selEmoVal);
-  // NOT: _serverCreateGroup kendi hata mesajını (gerçek sebebiyle) zaten gösteriyor —
-  // burada genel bir mesajla onun üzerine yazmıyoruz, aksi halde asıl hata gizlenirdi.
-  if(!g)return;
-  confetti();
-  toast('"'+name+'" oluşturuldu! 🎉');
-  setTimeout(()=>openGroup(g.id),300);
-}
-// Grubu olmayan/olan herkesin doğrudan koddan/QR'dan katılabilmesi için
-function openJoinGroup(){
-  const sendTab=document.getElementById('itab-send');
-  const joinTab=document.getElementById('itab-join');
-  const hasGroup=!!S.curGroup&&S.groups.some(x=>x.id===S.curGroup);
-  if(sendTab)sendTab.style.display=hasGroup?'':'none';
-  switchInvTab('join',joinTab);
-  openModal('addmem-modal');
-}
-function openAddMember(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const sendTab=document.getElementById('itab-send');if(sendTab)sendTab.style.display='';
-  // Grup bilgisini göster
-  const el=document.getElementById('inv-grp-info');
-  if(el)el.innerHTML=`<span style="font-size:20px">${g.emoji}</span> <span>${g.name} · ${g.members.length} üye</span>`;
-  // Davet panelini aç
-  switchInvTab('send',document.getElementById('itab-send'));
-  document.getElementById('addmem-inp').value='';
-  openModal('addmem-modal');
-  // QR ve kodu üret
-  generateInviteAssets(g);
-}
-
-function generateInviteAssets(g){
-  // Grup verisini JSON → UTF-8 safe base64
-  const payload=JSON.stringify({v:1,id:g.id,name:g.name,emoji:g.emoji,code:g.inviteCode});
-  let encoded;
-  try{encoded=btoa(unescape(encodeURIComponent(payload)));}
-  catch(e){encoded=btoa(payload);}
-
-  // QR kutuyu temizle ve yeni oluştur
-  const qrDiv=document.getElementById('qr-canvas');
-  qrDiv.innerHTML='';
-  try{
-    new QRCode(qrDiv,{
-      text:encoded,
-      width:180,height:180,
-      colorDark:'#07130d',colorLight:'#ffffff',
-      correctLevel:QRCode.CorrectLevel.M
-    });
-  }catch(e){
-    qrDiv.innerHTML='<div style="font-size:11px;color:#888;text-align:center;padding:20px">QR kütüphanesi yükleniyor...</div>';
-  }
-
-  // Davet kodunu göster
-  const codeEl=document.getElementById('inv-code-display');
-  if(codeEl)codeEl.textContent=g.inviteCode||'——';
-}
-
-function switchInvTab(tab,btn){
-  document.querySelectorAll('.inv-tab').forEach(b=>b.classList.remove('act'));
-  if(btn)btn.classList.add('act');
-  document.getElementById('inv-panel-send').style.display=tab==='send'?'':'none';
-  document.getElementById('inv-panel-join').style.display=tab==='join'?'':'none';
-  if(tab==='join'){stopQRScan();document.getElementById('join-code-inp').value='';}
-}
-
-function copyInviteCode(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const code=g.inviteCode||'——';
-  if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>toast('Davet kodu kopyalandı: '+code+' 🔑'));}
-  else{toast('Davet kodu: '+code);}
-}
-
-function copyInvite(){
-  // Grup detay sayfasındaki davet butonu
-  openAddMember();
-}
-
-function shareInvite(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const code=g.inviteCode;
-  const msg=`🕌 "${g.name}" namaz grubuna katılmak ister misin?\n\n📲 Davet Kodu: *${code}*\n\nNasıl katılırsın:\n1. Uygulamayı aç\n2. Gruplar → Gruba Katıl\n3. Kodu gir: ${code}`;
-
-  // 1. Web Share API (HTTPS veya destekleyen tarayıcı)
-  if(navigator.share&&navigator.canShare&&navigator.canShare({text:msg})){
-    navigator.share({title:g.name+' — Namaz Grubu',text:msg})
-      .then(()=>toast('Paylaşıldı! 🎉'))
-      .catch(err=>{if(err.name!=='AbortError')_fallbackShare(msg,code);});
-    return;
-  }
-  if(navigator.share){
-    navigator.share({title:g.name+' — Namaz Grubu',text:msg})
-      .then(()=>toast('Paylaşıldı! 🎉'))
-      .catch(err=>{if(err.name!=='AbortError')_fallbackShare(msg,code);});
-    return;
-  }
-  // 2. Fallback
-  _fallbackShare(msg,code);
-}
-
-function _fallbackShare(msg,code){
-  // WhatsApp direkt link
-  const waUrl='https://wa.me/?text='+encodeURIComponent(msg);
-  // Clipboard + WhatsApp aç
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(msg).then(()=>{
-      toast('Mesaj kopyalandı! WhatsApp açılıyor... 📋');
-      setTimeout(()=>window.open(waUrl,'_blank'),600);
-    }).catch(()=>{
-      window.open(waUrl,'_blank');
-    });
-  } else {
-    // Son çare: prompt içinde göster
-    window.open(waUrl,'_blank');
-    toast('Davet kodu: '+code+' (kopyalayın)');
-  }
-}
-
-function downloadQR(){
-  const canvas=document.querySelector('#qr-canvas canvas');
-  if(!canvas){toast('QR henüz hazır değil.',false);return;}
-  const g=S.groups.find(x=>x.id===S.curGroup);
-  const link=document.createElement('a');
-  link.download=(g?g.name:'grup')+'_davet_qr.png';
-  link.href=canvas.toDataURL('image/png');
-  link.click();
-  toast('QR kodu indirildi! 🖼️');
-}
-
-// ── Koda ile katıl ──────────────────────────
-async function joinByCode(){
-  const code=document.getElementById('join-code-inp').value.trim().toUpperCase();
-  if(code.length!==6){toast('6 haneli kodu eksiksiz gir.',false);return;}
-  // Zaten üye mi?
-  const existing=S.groups.find(x=>x.inviteCode===code);
-  if(existing){toast('"'+existing.name+'" grubuna zaten üyesin!',false);return;}
-  // Sunucuda bul & katıl
-  const res=await _serverJoinGroup(code);
-  if(!res){toast('Grup bulunamadı. Kod yanlış ya da sunucuya ulaşılamıyor.',false);return;}
-  closeModal('addmem-modal');
-  renderGroups();confetti();
-  const name=res.group?.name||'Grup';
-  toast('"'+name+'" grubuna katıldın! 🎉');
-  setTimeout(()=>res.group&&openGroup(res.group.id),400);
-}
-
-// ── QR Kamera Tarayıcı ──────────────────────
-let qrStream=null,qrInterval=null;
-
-function startQRScan(){
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    toast('Bu tarayıcıda kamera desteklenmiyor.',false);return;
-  }
-  const wrap=document.getElementById('qr-reader-wrap');
-  const btn=document.getElementById('qr-scan-btn');
-  const lbl=document.getElementById('qr-scan-lbl');
-  wrap.style.display='';btn.style.display='none';
-  if(lbl)lbl.textContent='Kamerayı QR koda doğrult...';
-
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}})
-    .then(stream=>{
-      qrStream=stream;
-      const video=document.getElementById('qr-video');
-      video.srcObject=stream;
-      video.onloadedmetadata=()=>video.play().catch(()=>{});
-
-      if(typeof jsQR!=='undefined'){
-        const canvas=document.createElement('canvas');
-        const ctx2=canvas.getContext('2d',{willReadFrequently:true});
-        qrInterval=setInterval(()=>{
-          if(video.readyState>=2&&video.videoWidth>0){
-            canvas.width=video.videoWidth;
-            canvas.height=video.videoHeight;
-            ctx2.drawImage(video,0,0,canvas.width,canvas.height);
-            const imgData=ctx2.getImageData(0,0,canvas.width,canvas.height);
-            const result=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'dontInvert'});
-            if(result&&result.data){
-              handleQRResult(result.data);
-              stopQRScan();
-            }
-          }
-        },200);
-        if(lbl)lbl.textContent='Kamerayı QR koda doğrult... 🔍';
-      } else {
-        if(lbl)lbl.textContent='⚠️ QR okuyucu yüklenemedi. Kod ile katılın.';
-      }
-    })
-    .catch(err=>{
-      toast('Kamera izni gerekli veya başka uygulama kullanıyor.',false);
-      stopQRScan();
-    });
-}
-
-function stopQRScan(){
-  if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null;}
-  if(qrInterval){clearInterval(qrInterval);qrInterval=null;}
-  const wrap=document.getElementById('qr-reader-wrap');
-  const btn=document.getElementById('qr-scan-btn');
-  if(wrap)wrap.style.display='none';
-  if(btn)btn.style.display='';
-}
-
-function handleQRResult(data){
-  try{
-    let jsonStr;
-    try{jsonStr=decodeURIComponent(escape(atob(data)));}
-    catch(e){jsonStr=atob(data);}
-    const payload=JSON.parse(jsonStr);
-    if(!payload.v||!payload.name){toast('Geçersiz QR kod.',false);return;}
-    const exists=S.groups.find(x=>x.id===payload.id||x.inviteCode===payload.code);
-    if(exists){toast('"'+exists.name+'" grubuna zaten üyesin!',false);return;}
-    const newG={
-      id:payload.id||('g'+Date.now()),
-      name:payload.name,
-      emoji:payload.emoji||'🕌',
-      inviteCode:payload.code||genCode(),
-      members:[{name:S.name||'Ben',done:{},isMe:true,kildiAt:''}],
-      chat:[{type:'event',txt:`👤 ${S.name||'Ben'} QR ile gruba katıldı!`,time:nowTime()}],
-      _dd:tkey()
-    };
-    PK.forEach(k=>newG.members[0].done[k]=false);
-    S.groups.push(newG);save();
-    closeModal('addmem-modal');renderGroups();confetti();
-    toast('"'+newG.name+'" grubuna katıldın! 🎉');
-  }catch(e){toast('QR kod okunamadı: '+e.message,false);}
-}
-
-function addMember(){
-  const name=document.getElementById('addmem-inp').value.trim();
-  if(!name){toast('İsim girin.',false);return;}
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  if(g.members.find(m=>m.name.toLowerCase()===name.toLowerCase())){toast('Bu üye zaten grupta!',false);return;}
-  const m={name,done:{},kildiAt:'',isMe:false};
-  PK.forEach(k=>m.done[k]=false);
-  g.members.push(m);
-  if(!g.chat)g.chat=[];
-  g.chat.push({type:'event',txt:`👤 ${name} gruba eklendi!`,time:nowTime()});
-  save();
-  document.getElementById('addmem-inp').value='';
-  const gdSub=document.getElementById('gd-sub');
-  if(gdSub)gdSub.textContent=g.members.length+' üye';
-  toast(name+' eklendi! 👤');
-  renderNamazTab(g);renderGroups();
-}
-
-// ── Gerçek Zamanlı Grup Polling ────────────────────────
-let _grpPollInterval=null;
-// Firestore'un gerçek zamanlı dinleme (onSnapshot) özelliği sayesinde artık
-// 8 saniyede bir "yoklama" yapmıyoruz — biri "kıldım" dediği veya mesaj attığı
-// an, diğer üyelerin ekranı ANINDA güncelleniyor. İsim geriye dönük uyumluluk
-// için korundu ama içeriği tamamen değişti.
-let _groupUnsubs=[];
-function startGroupPolling(){
-  stopGroupPolling();
-  if(!S.curGroup)return;
-  const groupId=S.curGroup;
-  const local=S.groups.find(x=>x.id===groupId);
-  if(!local)return;
-
-  // 1) Grup dokümanını dinle (isim/emoji/sohbet değişiklikleri)
-  const unsubGroup=fdb.collection('groups').doc(groupId).onSnapshot(doc=>{
-    if(!doc.exists)return;
-    const g=doc.data();
-    const prevLen=local.chat.length;
-    local.chat=g.chat||[];
-    local.name=g.name;local.emoji=g.emoji;local._dd=g.dayKey;
-    if(local.chat.length>prevLen){
-      const newMsgs=local.chat.slice(prevLen);
-      const uid=getUID();
-      const incoming=newMsgs.some(m=>(m.type==='msg'||m.type==='pray')&&!m.mine&&m.userId!==uid);
-      if(incoming){
-        playMsgSound(false);
-        try{if(navigator.vibrate)navigator.vibrate([40,30,40]);}catch(e){}
-      }
-      const chatEl=document.getElementById('gtab-gchat');
-      if(chatEl&&chatEl.classList.contains('show'))renderChat();
-    }
-    save();renderGroups();
-  },err=>console.warn('Grup dinleme hatası:',err.message));
-
-  // 2) Üyeler alt-koleksiyonunu dinle (kim kıldı, kim değil — anlık)
-  const unsubMembers=fdb.collection('groups').doc(groupId).collection('members').onSnapshot(snap=>{
-    const members=snap.docs.map(d=>({userId:d.id,name:d.data().name,done:d.data().done||{},kildiAt:d.data().kildiAt||''}));
-    _initDone(members);
-    local.members=members;
-    stampIsMe(local);
-    save();
-    const namazEl=document.getElementById('gtab-gnamaz');
-    if(namazEl&&namazEl.classList.contains('show'))renderNamazTab(local);
-    if(document.getElementById('full-mem-list'))renderFullMem();
-    renderGroups();
-  },err=>console.warn('Üye dinleme hatası:',err.message));
-
-  _groupUnsubs=[unsubGroup,unsubMembers];
-}
-function stopGroupPolling(){
-  _groupUnsubs.forEach(u=>{try{u();}catch(e){}});
-  _groupUnsubs=[];
-}
-
-// ── Member edit / delete ─────────────────────────────
-function editMember(idx){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const m=g.members[idx];if(!m||m.isMe)return;
-  const newName=prompt('Üye adını düzenle:',m.name);
-  if(!newName||!newName.trim())return;
-  m.name=newName.trim();
-  save();renderFullMem();renderNamazTab(g);renderGroups();
-  toast('Üye güncellendi!');
-}
-function deleteMember(idx){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const m=g.members[idx];if(!m||m.isMe){toast('Kendinizi silemezsiniz.',false);return;}
-  if(!confirm(m.name+' üyesini gruptan çıkarmak istediğinize emin misiniz?'))return;
-  g.members.splice(idx,1);
-  g.chat.push({type:'event',txt:`👤 ${m.name} gruptan çıkarıldı.`,time:nowTime()});
-  save();renderFullMem();renderNamazTab(g);
-  document.getElementById('gd-sub').textContent=g.members.length+' üye';
-  toast(m.name+' çıkarıldı.');
-}
-
-// ── Group edit / delete ──────────────────────────────
-function openEditGroup(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  document.getElementById('cg-name').value=g.name;
-  // pre-select emoji
-  document.querySelectorAll('.emoji-opt').forEach(b=>{
-    b.classList.remove('sel');
-    if(b.textContent===g.emoji)b.classList.add('sel');
-  });
-  selEmoVal=g.emoji;
-  // Change modal button to "Güncelle"
-  const btn=document.querySelector('#cg-modal .btn-green.full');
-  if(btn){btn.textContent='';btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Grubu Güncelle';btn.onclick=saveGroupEdit;}
-  openModal('cg-modal');
-}
-function saveGroupEdit(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  const name=document.getElementById('cg-name').value.trim();
-  if(!name){toast('Grup adı girin.',false);return;}
-  g.name=name;g.emoji=selEmoVal;
-  save();closeModal('cg-modal');
-  // Restore create button
-  const btn=document.querySelector('#cg-modal .btn-green.full');
-  if(btn){btn.innerHTML='<i class="fa-solid fa-check"></i> Grubu Oluştur';btn.onclick=createGroup;}
-  // Update header
-  const ac=avC(g.name);
-  document.getElementById('gd-emo').textContent=g.emoji;
-  document.getElementById('gd-emo').style.cssText=`background:${ac.bg};color:${ac.cl};font-size:26px;`;
-  document.getElementById('gd-title').textContent=g.name;
-  renderGroups();toast('Grup güncellendi!');
-}
-function confirmDeleteGroup(){
-  const g=S.groups.find(x=>x.id===S.curGroup);if(!g)return;
-  if(!confirm('"'+g.name+'" grubunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'))return;
-  S.groups=S.groups.filter(x=>x.id!==S.curGroup);
-  S.curGroup=null;save();backToMain();
-  toast('Grup silindi.');
-}
-
-function quickEditGroup(gid){
-  S.curGroup=gid;openEditGroup();
-}
-function quickDeleteGroup(gid){
-  const g=S.groups.find(x=>x.id===gid);if(!g)return;
-  if(!confirm('"'+g.name+'" grubunu silmek istediğinize emin misiniz?'))return;
-  S.groups=S.groups.filter(x=>x.id!==gid);
-  save();renderGroups();toast('Grup silindi.');
-}
-function renderGroupActions(gid){openGroup(gid);}
 
 // ═══════════════════════════════════════════
 // SES SİSTEMİ
@@ -3899,7 +2362,7 @@ function togPrayerSet(k,btn){S.alarms[k]=S.alarms[k]===false;btn.className='tog 
 function saveSettings(){
   const n=document.getElementById('set-name').value.trim(),c=document.getElementById('set-city').value;
   S.name=n;if(c&&c!==S.city){S.city=c;const cd=CITIES[c];S.lat=cd.lat;S.lon=cd.lon;}
-  save();render();renderGroups();toast('Ayarlar kaydedildi!');
+  save();render();toast('Ayarlar kaydedildi!');
 }
 
 // ═══════════════════════════════════════════
@@ -3946,12 +2409,6 @@ function confetti(){
 // ═══════════════════════════════════════════
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-function copyInvite(){
-  const g=S.groups.find(x=>x.id===S.curGroup);
-  const link='cemaatim.app/join/'+(g?g.id.slice(-8):'xxx');
-  if(navigator.clipboard){navigator.clipboard.writeText(link).then(()=>toast('Davet linki kopyalandı! 🔗')).catch(()=>toast('Davet linki kopyalandı! 🔗'));}
-  else{toast('Davet linki kopyalandı! 🔗');}
-}
 document.addEventListener('DOMContentLoaded',async()=>{
   // Modal overlay'e tıklayınca kapanma
   document.querySelectorAll('.modal-ov').forEach(ov=>{
@@ -3963,37 +2420,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
   logActivityToday();
   // 1) Önce localStorage'dan anlık yükle (hızlı)
   try{_applyUser(JSON.parse(localStorage.getItem('cm6')||'{}'));}catch(e){}
-  // Gruplar için de önbellekten anlık göster (sunucu yanıtı gelene kadar "boş" görünmesin)
-  loadCachedGroups();
   // Özel ses varsa geri yükle
   loadCustomAudioFromStorage();
   // Tema uygula
   applyTheme(S.cfg.theme||'dark');
   // Eğer şehir seçilmişse direkt ana sayfaya git (localStorage verisiyle)
   if(S.city||S.lat){goMain();maybeAskNotifPerm();}
-  // 2) Sunucudan güncel veri çek (async — UI donmaz)
-  syncBadge('⏳ Yükleniyor...',0);
-  try{
-    await _fbReady;
-    const uDoc=await fdb.collection('users').doc(getUID()).get();
-    const d=uDoc.exists?uDoc.data():null;
-    if(d){_applyUser(d);localStorage.setItem('cm6',JSON.stringify(d));syncBadge('✅ Senkronize');
-      if(S.city||S.lat)goMain();}
-    else{syncBadge('');if(S.city||S.lat)goMain();}
-  }catch(e){
-    console.warn('Kullanıcı verisi yüklenemedi:',e.message);
-    syncBadge('📴 Çevrimdışı');if(S.city||S.lat)goMain();
-  }
-  // 3) Grupları sunucudan yükle (bağlanamazsa devam et)
-  loadGroups().catch(()=>{});
   // Her dakika namaz vakti yenile
   setInterval(()=>{if(document.getElementById('pg-main').classList.contains('show'))render();},60000);
-  // Her 30sn chat yenile
-  setInterval(()=>{if(S.curGroup)refreshChat(S.curGroup);},30000);
-  // Uygulama arka plandan öne gelince gruplar sessizce tazelensin (mevcut liste silinmeden)
-  document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='visible')loadGroups().catch(()=>{});
-  });
 });
 
 // ═══════════════════════════════════════════
