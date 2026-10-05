@@ -1611,15 +1611,42 @@ const fFns  = firebase.functions();
 // Cihaza özel sabit kullanıcı ID — artık Firebase Anonim Kimlik Doğrulama UID'si.
 // Kayıt/şifre yok, cihaz sessizce ve otomatik olarak "oturum açar", kalıcıdır.
 let _fbUid=null;
-const _fbReady=new Promise(resolve=>{
+let _fbError=null;
+let _fbReadyResolve,_fbReadyReject;
+const _fbReady=new Promise((resolve,reject)=>{_fbReadyResolve=resolve;_fbReadyReject=reject;});
+let _fbAuthStarted=false;
+
+function _fbFail(e){
+  if(_fbError)return;
+  _fbError=e||new Error('Firebase bağlantısı kurulamadı');
+  console.error('Firebase bağlantı hatası:',_fbError);
+  _fbReadyReject(_fbError);
+  syncBadge('⚠️ Sunucu bağlantısı yok',0);
+  const code=_fbError.code||'?';
+  const msg=code==='auth/operation-not-allowed'
+    ? 'Firebase Anonymous giriş kapalı. Firebase Console → Authentication → Sign-in method → Anonymous seçeneğini açın.'
+    : 'Sunucu bağlantısı kurulamadı ['+code+']. Uygulama çevrimdışı çalışmaya devam ediyor.';
+  setTimeout(()=>{try{toast(msg,false);}catch(_){}} ,300);
+}
+
+try{
   fAuth.onAuthStateChanged(user=>{
-    if(user){_fbUid=user.uid;resolve(user.uid);}
-    else fAuth.signInAnonymously().catch(e=>{
-      console.error('Firebase giriş hatası:',e);
-      toast('Giriş hatası ['+(e.code||'?')+']: '+e.message,false);
-    });
-  });
-});
+    if(user){
+      _fbUid=user.uid;
+      if(!_fbAuthStarted){_fbAuthStarted=true;_fbReadyResolve(user.uid);}
+      syncBadge('☁️ Sunucu bağlı');
+    }else if(!_fbAuthStarted){
+      _fbAuthStarted=true;
+      fAuth.signInAnonymously().catch(_fbFail);
+    }
+  },_fbFail);
+}catch(e){_fbFail(e);}
+
+// Auth hiç cevap vermezse uygulamanın açılmasını sonsuza kadar bekletme.
+setTimeout(()=>{
+  if(!_fbUid&&!_fbError)_fbFail(new Error('Firebase kimlik doğrulama zaman aşımına uğradı'));
+},10000);
+
 function getUID(){return _fbUid||'pending';}
 
 // ── "Ben" (bu cihaz) üyesini güvenilir şekilde işaretle ──
